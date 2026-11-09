@@ -1,0 +1,826 @@
+{
+  "generatedAt": "2026-11-09T18:56:24.076Z",
+  "collections": [
+    {
+      "name": "users",
+      "type": "auth",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != '' || creci != ''",
+        "create": "",
+        "update": "id = @request.auth.id",
+        "delete": "id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "profile",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["interessado", "corretor", "admin"]
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "state",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "creci",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "creci_uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "real_estate",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "regions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "creci_status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente", "aprovado", "rejeitado"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "properties",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "purpose",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["comprar", "alugar"]
+        },
+        {
+          "name": "property_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["apartamento", "casa", "cobertura", "terreno", "comercial", "rural"]
+        },
+        {
+          "name": "state",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "neighborhood",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "hide_exact_address",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "condo_fee",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "iptu",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "area",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "bedrooms",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "bathrooms",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "parking_spaces",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "features",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "images",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "photos_urls",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ativo", "pausado", "encerrado"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_props_city_state ON properties (state, city)",
+        "CREATE INDEX idx_props_purpose ON properties (purpose)",
+        "CREATE INDEX idx_props_status ON properties (status)"
+      ]
+    },
+    {
+      "name": "interests",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "purpose",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["comprar", "alugar"]
+        },
+        {
+          "name": "property_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["apartamento", "casa", "cobertura", "terreno", "comercial", "rural"]
+        },
+        {
+          "name": "state",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "neighborhoods",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_price",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "max_price",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_bedrooms",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_bathrooms",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_parking_spaces",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "min_area",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "preferences",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ativo", "pausado", "encerrado"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_interests_city_state ON interests (state, city)",
+        "CREATE INDEX idx_interests_purpose ON interests (purpose)",
+        "CREATE INDEX idx_interests_status ON interests (status)"
+      ]
+    },
+    {
+      "name": "presentations",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (broker_id = @request.auth.id || interest_owner_id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && broker_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "interest_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "interests"
+        },
+        {
+          "name": "interest_owner_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "property_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "properties"
+        },
+        {
+          "name": "broker_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pendente", "aceita", "recusada", "expirada"]
+        },
+        {
+          "name": "rejection_reason",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responded_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_pres_interest ON presentations (interest_id)",
+        "CREATE INDEX idx_pres_broker ON presentations (broker_id)",
+        "CREATE INDEX idx_pres_status ON presentations (status)"
+      ]
+    },
+    {
+      "name": "chats",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (buyer_id = @request.auth.id || broker_id = @request.auth.id)",
+        "view": "@request.auth.id != '' && (buyer_id = @request.auth.id || broker_id = @request.auth.id)",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && (buyer_id = @request.auth.id || broker_id = @request.auth.id)",
+        "delete": "@request.auth.id != '' && (buyer_id = @request.auth.id || broker_id = @request.auth.id)"
+      },
+      "fields": [
+        {
+          "name": "presentation_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "presentations"
+        },
+        {
+          "name": "interest_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "interests"
+        },
+        {
+          "name": "property_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "properties"
+        },
+        {
+          "name": "buyer_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "broker_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "share_contact",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_message",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_message_time",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["ativo", "arquivado"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_chats_buyer ON chats (buyer_id)",
+        "CREATE INDEX idx_chats_broker ON chats (broker_id)"
+      ]
+    },
+    {
+      "name": "messages",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && sender_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && sender_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "chat_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "chats"
+        },
+        {
+          "name": "sender_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "text",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "is_read",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_msgs_chat ON messages (chat_id, created ASC)"]
+    },
+    {
+      "name": "favorites",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "property_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "properties"
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_fav_user_prop ON favorites (user_id, property_id)"]
+    },
+    {
+      "name": "imported_contacts",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "state",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "creci",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "authorization_status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["autorizado", "pendente", "descadastrado"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "notification_logs",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "recipient_email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "recipient_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "recipient_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["corretor", "interessado", "contato_importado"]
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "notification_type",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "match_demanda",
+            "apresentacao_recebida",
+            "apresentacao_aceita",
+            "mensagem_chat",
+            "geral"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["enviado", "falha", "descadastrado"]
+        },
+        {
+          "name": "details",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    }
+  ]
+}
