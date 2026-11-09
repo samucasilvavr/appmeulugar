@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T18:56:24.076Z",
+  "generatedAt": "2026-11-09T19:49:26.792Z",
   "collections": [
     {
       "name": "users",
@@ -268,7 +268,7 @@
       "apiRules": {
         "list": "",
         "view": "",
-        "create": "@request.auth.id != ''",
+        "create": "(@request.auth.id != '' && user_id = @request.auth.id) || (@request.auth.id = '' && user_id = '')",
         "update": "@request.auth.id != '' && user_id = @request.auth.id",
         "delete": "@request.auth.id != '' && user_id = @request.auth.id"
       },
@@ -276,7 +276,7 @@
         {
           "name": "user_id",
           "type": "relation",
-          "required": true,
+          "required": false,
           "system": false,
           "collectionRef": "users"
         },
@@ -386,12 +386,31 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "contact_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contact_email",
+          "type": "email",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "contact_phone",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_interests_city_state ON interests (state, city)",
         "CREATE INDEX idx_interests_purpose ON interests (purpose)",
-        "CREATE INDEX idx_interests_status ON interests (status)"
+        "CREATE INDEX idx_interests_status ON interests (status)",
+        "CREATE INDEX idx_interests_contact_email ON interests (contact_email)"
       ]
     },
     {
