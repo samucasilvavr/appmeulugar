@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-13T14:33:36.600Z",
+  "generatedAt": "2026-11-13T17:04:21.913Z",
   "collections": [
     {
       "name": "users",
@@ -8,7 +8,7 @@
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != '' || creci != ''",
         "create": "",
-        "update": "id = @request.auth.id",
+        "update": "(id = @request.auth.id && @request.body.profile:changed = false && @request.body.creci_status:changed = false) || (@request.auth.profile = 'admin' && @request.body.profile:changed = false)",
         "delete": "id = @request.auth.id"
       },
       "fields": [
@@ -107,7 +107,7 @@
         "list": "",
         "view": "",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": "(user_id = @request.auth.id && @request.body.status:changed = false) || (@request.auth.profile = 'admin' && @request.body.user_id:changed = false)",
         "delete": "@request.auth.id != '' && user_id = @request.auth.id"
       },
       "fields": [
@@ -269,7 +269,7 @@
         "list": "",
         "view": "",
         "create": "(@request.auth.id != '' && user_id = @request.auth.id) || (@request.auth.id = '' && user_id = '')",
-        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "update": "(user_id = @request.auth.id && @request.body.status:changed = false) || (@request.auth.profile = 'admin' && @request.body.user_id:changed = false)",
         "delete": "@request.auth.id != '' && user_id = @request.auth.id"
       },
       "fields": [

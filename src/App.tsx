@@ -12,6 +12,8 @@ import SearchPage from './pages/Search'
 import LoginPage from './pages/Login'
 import RegisterPage from './pages/Register'
 import ForgotPasswordPage from './pages/ForgotPassword'
+import VerifyEmailPage from './pages/VerifyEmail'
+import ResetPasswordPage from './pages/ResetPassword'
 import PublishInterestPage from './pages/PublishInterest'
 import PublishPropertyPage from './pages/PublishProperty'
 import BuyerDashboard from './pages/BuyerDashboard'
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cadastro" element={<RegisterPage />} />
             <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+            <Route path="/verificar-email" element={<VerifyEmailPage />} />
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/publicar-interesse" element={<PublishInterestPage />} />
             <Route path="/publicar-imovel" element={<PublishPropertyPage />} />
             <Route path="/painel-interessado" element={<BuyerDashboard />} />

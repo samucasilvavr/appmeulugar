@@ -32,6 +32,7 @@ import type {
   NotificationLogRecord,
 } from '@/types/database'
 import { useToast } from '@/hooks/use-toast'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 import {
   ShieldCheck,
   CheckCircle2,
@@ -124,7 +125,11 @@ export default function AdminDashboard() {
       loadData()
     } catch (err) {
       console.error('Error updating CRECI:', err)
-      toast({ title: 'Erro ao atualizar CRECI', variant: 'destructive' })
+      toast({
+        title: 'Erro ao atualizar CRECI',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
     }
   }
 
@@ -135,7 +140,12 @@ export default function AdminDashboard() {
       toast({ title: `Imóvel alterado para ${nextStatus}` })
       loadData()
     } catch (err) {
-      console.error(err)
+      console.error('Error toggling property:', err)
+      toast({
+        title: 'Erro ao atualizar imóvel',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
     }
   }
 
@@ -146,7 +156,12 @@ export default function AdminDashboard() {
       toast({ title: `Demanda alterada para ${nextStatus}` })
       loadData()
     } catch (err) {
-      console.error(err)
+      console.error('Error toggling interest:', err)
+      toast({
+        title: 'Erro ao atualizar demanda',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
     }
   }
 
