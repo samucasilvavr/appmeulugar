@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-13T17:48:15.335Z",
+  "generatedAt": "2026-11-13T18:40:42.991Z",
   "collections": [
     {
       "name": "users",
@@ -29,21 +29,30 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "profile",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["interessado", "corretor", "admin"]
+          "selectValues": [
+            "interessado",
+            "corretor",
+            "admin"
+          ]
         },
         {
           "name": "phone",
@@ -92,7 +101,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["pendente", "aprovado", "rejeitado"]
+          "selectValues": [
+            "pendente",
+            "aprovado",
+            "rejeitado"
+          ]
         }
       ],
       "indexes": [
@@ -135,14 +148,24 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["comprar", "alugar"]
+          "selectValues": [
+            "comprar",
+            "alugar"
+          ]
         },
         {
           "name": "property_type",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["apartamento", "casa", "cobertura", "terreno", "comercial", "rural"]
+          "selectValues": [
+            "apartamento",
+            "casa",
+            "cobertura",
+            "terreno",
+            "comercial",
+            "rural"
+          ]
         },
         {
           "name": "state",
@@ -239,21 +262,30 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["ativo", "pausado", "encerrado"]
+          "selectValues": [
+            "ativo",
+            "pausado",
+            "encerrado"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -291,14 +323,24 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["comprar", "alugar"]
+          "selectValues": [
+            "comprar",
+            "alugar"
+          ]
         },
         {
           "name": "property_type",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["apartamento", "casa", "cobertura", "terreno", "comercial", "rural"]
+          "selectValues": [
+            "apartamento",
+            "casa",
+            "cobertura",
+            "terreno",
+            "comercial",
+            "rural"
+          ]
         },
         {
           "name": "state",
@@ -371,21 +413,30 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["ativo", "pausado", "encerrado"]
+          "selectValues": [
+            "ativo",
+            "pausado",
+            "encerrado"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "contact_name",
@@ -463,7 +514,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["pendente", "aceita", "recusada", "expirada"]
+          "selectValues": [
+            "pendente",
+            "aceita",
+            "recusada",
+            "expirada"
+          ]
         },
         {
           "name": "rejection_reason",
@@ -482,14 +538,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -567,21 +628,29 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["ativo", "arquivado"]
+          "selectValues": [
+            "ativo",
+            "arquivado"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -631,17 +700,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_msgs_chat ON messages (chat_id, created ASC)"]
+      "indexes": [
+        "CREATE INDEX idx_msgs_chat ON messages (chat_id, created ASC)"
+      ]
     },
     {
       "name": "favorites",
@@ -673,17 +749,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_fav_user_prop ON favorites (user_id, property_id)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_fav_user_prop ON favorites (user_id, property_id)"
+      ]
     },
     {
       "name": "imported_contacts",
@@ -743,21 +826,30 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["autorizado", "pendente", "descadastrado"]
+          "selectValues": [
+            "autorizado",
+            "pendente",
+            "descadastrado"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": []
@@ -790,7 +882,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["corretor", "interessado", "contato_importado"]
+          "selectValues": [
+            "corretor",
+            "interessado",
+            "contato_importado"
+          ]
         },
         {
           "name": "subject",
@@ -816,7 +912,11 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["enviado", "falha", "descadastrado"]
+          "selectValues": [
+            "enviado",
+            "falha",
+            "descadastrado"
+          ]
         },
         {
           "name": "details",
@@ -829,14 +929,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": []
