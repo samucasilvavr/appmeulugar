@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/CurrencyInput'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -48,9 +49,9 @@ export default function PublishPropertyPage() {
   const [neighborhood, setNeighborhood] = useState('')
   const [address, setAddress] = useState('')
   const [hideExactAddress, setHideExactAddress] = useState(true)
-  const [price, setPrice] = useState<string>('')
-  const [condoFee, setCondoFee] = useState<string>('')
-  const [iptu, setIptu] = useState<string>('')
+  const [price, setPrice] = useState<number | ''>('')
+  const [condoFee, setCondoFee] = useState<number | ''>('')
+  const [iptu, setIptu] = useState<number | ''>('')
 
   // Step 3: Features & Photos
   const [area, setArea] = useState<string>('')
@@ -90,7 +91,7 @@ export default function PublishPropertyPage() {
       }
       setStep(2)
     } else if (step === 2) {
-      if (!price || Number(price) <= 0) {
+      if (!price || price <= 0) {
         toast({ title: 'Informe o valor do imóvel', variant: 'destructive' })
         return
       }
@@ -121,9 +122,9 @@ export default function PublishPropertyPage() {
         neighborhood,
         address,
         hide_exact_address: hideExactAddress,
-        price: Number(price),
-        condo_fee: condoFee ? Number(condoFee) : undefined,
-        iptu: iptu ? Number(iptu) : undefined,
+        price: typeof price === 'number' ? price : 0,
+        condo_fee: condoFee !== '' ? condoFee : undefined,
+        iptu: iptu !== '' ? iptu : undefined,
         area: area ? Number(area) : undefined,
         bedrooms: bedrooms ? Number(bedrooms) : undefined,
         bathrooms: bathrooms ? Number(bathrooms) : undefined,
@@ -368,25 +369,25 @@ export default function PublishPropertyPage() {
                   <label className="text-xs font-medium text-foreground">
                     Preço {purpose === 'alugar' ? 'de Aluguel' : 'de Venda'} (R$) *
                   </label>
-                  <Input
-                    type="number"
-                    required
-                    placeholder={purpose === 'comprar' ? '890000' : '3800'}
+                  <CurrencyInput
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    onChange={setPrice}
+                    placeholder={purpose === 'comprar' ? 'R$ 890.000,00' : 'R$ 3.800,00'}
                     className="text-xs h-9 font-semibold"
                   />
+                  <span className="text-[11px] text-muted-foreground block">
+                    Digite apenas números: 550000 vira R$ 550.000,00 (2 últimos = centavos)
+                  </span>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">
                     Condomínio (R$ opcional)
                   </label>
-                  <Input
-                    type="number"
-                    placeholder="850"
+                  <CurrencyInput
                     value={condoFee}
-                    onChange={(e) => setCondoFee(e.target.value)}
+                    onChange={setCondoFee}
+                    placeholder="R$ 850,00"
                     className="text-xs h-9"
                   />
                 </div>
@@ -395,11 +396,10 @@ export default function PublishPropertyPage() {
                   <label className="text-xs font-medium text-foreground">
                     IPTU anual/mensal (R$)
                   </label>
-                  <Input
-                    type="number"
-                    placeholder="220"
+                  <CurrencyInput
                     value={iptu}
-                    onChange={(e) => setIptu(e.target.value)}
+                    onChange={setIptu}
+                    placeholder="R$ 220,00"
                     className="text-xs h-9"
                   />
                 </div>
@@ -428,10 +428,15 @@ export default function PublishPropertyPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">Área Útil (m²)</label>
                   <Input
-                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={100000}
                     placeholder="82"
                     value={area}
-                    onChange={(e) => setArea(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^\d]/g, '')
+                      setArea(v ? String(Number(v)) : '')
+                    }}
                     className="text-xs h-9"
                   />
                 </div>

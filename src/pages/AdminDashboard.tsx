@@ -403,8 +403,8 @@ export default function AdminDashboard() {
                     <div className="space-y-0.5 truncate">
                       <span className="font-semibold block truncate">{p.title}</span>
                       <span className="text-muted-foreground text-[11px]">
-                        R$ {p.price.toLocaleString('pt-BR')} • {p.city}/{p.state} • Status:{' '}
-                        {p.status}
+                        {p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} •{' '}
+                        {p.city}/{p.state} • Status: {p.status}
                       </span>
                     </div>
                     <Button
@@ -431,8 +431,12 @@ export default function AdminDashboard() {
                     <div className="space-y-0.5 truncate">
                       <span className="font-semibold block truncate">{i.title}</span>
                       <span className="text-muted-foreground text-[11px]">
-                        Teto: R$ {i.max_price.toLocaleString('pt-BR')} • {i.city}/{i.state} •
-                        Status: {i.status}
+                        Teto:{' '}
+                        {i.max_price.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}{' '}
+                        • {i.city}/{i.state} • Status: {i.status}
                       </span>
                     </div>
                     <Button

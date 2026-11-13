@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/CurrencyInput'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
+
 import { PropertyCard } from '@/components/PropertyCard'
 import { InterestCard } from '@/components/InterestCard'
 import { getProperties } from '@/services/properties'
@@ -41,6 +42,8 @@ export default function SearchPage() {
   const [bedrooms, setBedrooms] = useState<string>(searchParams.get('quartos') || 'todos')
   const [maxPrice, setMaxPrice] = useState<number>(Number(searchParams.get('preco_max')) || 2000000)
   const [textSearch, setTextSearch] = useState<string>(searchParams.get('q') || '')
+  const [minPriceFilter, setMinPriceFilter] = useState<number | ''>('')
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number | ''>('')
 
   const [properties, setProperties] = useState<PropertyRecord[]>([])
   const [interests, setInterests] = useState<InterestRecord[]>([])
@@ -72,6 +75,8 @@ export default function SearchPage() {
     setPropertyType('todos')
     setBedrooms('todos')
     setMaxPrice(2000000)
+    setMinPriceFilter('')
+    setMaxPriceFilter('')
     setTextSearch('')
   }
 
@@ -85,6 +90,8 @@ export default function SearchPage() {
       const minBeds = Number(bedrooms)
       if ((p.bedrooms || 0) < minBeds) return false
     }
+    if (maxPriceFilter !== '' && p.price > maxPriceFilter) return false
+    if (minPriceFilter !== '' && p.price < minPriceFilter) return false
     if (p.price > maxPrice) return false
     if (textSearch.trim()) {
       const q = textSearch.toLowerCase()
@@ -106,6 +113,8 @@ export default function SearchPage() {
       const minBeds = Number(bedrooms)
       if ((i.min_bedrooms || 0) < minBeds) return false
     }
+    if (maxPriceFilter !== '' && i.max_price > maxPriceFilter) return false
+    if (minPriceFilter !== '' && (i.max_price || 0) < minPriceFilter) return false
     if (i.max_price > maxPrice && maxPrice < 2000000) return false
     if (textSearch.trim()) {
       const q = textSearch.toLowerCase()
@@ -314,19 +323,31 @@ export default function SearchPage() {
             </Select>
           </div>
 
-          {/* Price Range Slider */}
+          {/* Price Range (digitado, com formatação BRL) */}
           <div className="space-y-2 pt-2 border-t">
-            <div className="flex justify-between text-xs">
-              <span className="font-medium text-foreground">Valor máximo:</span>
-              <span className="font-bold text-primary">R$ {maxPrice.toLocaleString('pt-BR')}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <span className="text-xs font-medium text-foreground">Valor mínimo</span>
+                <CurrencyInput
+                  value={minPriceFilter}
+                  onChange={setMinPriceFilter}
+                  placeholder="R$ 0,00"
+                  className="text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-xs font-medium text-foreground">Valor máximo</span>
+                <CurrencyInput
+                  value={maxPriceFilter}
+                  onChange={setMaxPriceFilter}
+                  placeholder="R$ 3.000.000,00"
+                  className="text-xs h-9"
+                />
+              </div>
             </div>
-            <Slider
-              min={1000}
-              max={3000000}
-              step={10000}
-              value={[maxPrice]}
-              onValueChange={(val) => setMaxPrice(val[0])}
-            />
+            <p className="text-[11px] text-muted-foreground">
+              Digite apenas números: 550000 vira R$ 550.000,00 (os 2 últimos dígitos são centavos).
+            </p>
           </div>
         </aside>
 

@@ -343,8 +343,12 @@ export default function BrokerDashboard() {
                         <div className="p-3 bg-muted/40 rounded-lg space-y-1.5 text-xs">
                           <span className="font-semibold text-foreground flex items-center gap-1">
                             <Target className="h-3.5 w-3.5 text-emerald-600" />
-                            Seu imóvel compatível: <strong>{property.title}</strong> (R${' '}
-                            {property.price.toLocaleString('pt-BR')})
+                            Seu imóvel compatível: <strong>{property.title}</strong> (
+                            {property.price.toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            })}
+                            )
                           </span>
 
                           <div className="flex flex-wrap gap-1.5 pt-1">
@@ -381,7 +385,11 @@ export default function BrokerDashboard() {
                           </Button>
                         )}
                         <span className="text-[11px] text-muted-foreground">
-                          Orçamento máx: R$ {interest.max_price.toLocaleString('pt-BR')}
+                          Orçamento máx:{' '}
+                          {interest.max_price.toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          })}
                         </span>
                       </div>
                     </div>

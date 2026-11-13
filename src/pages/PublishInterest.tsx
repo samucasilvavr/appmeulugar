@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/CurrencyInput'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -55,8 +56,8 @@ export default function PublishInterestPage() {
   const [stateUf, setStateUf] = useState(user?.state || 'SP')
   const [city, setCity] = useState(user?.city || 'São Paulo')
   const [neighborhoods, setNeighborhoods] = useState('')
-  const [minPrice, setMinPrice] = useState<string>('')
-  const [maxPrice, setMaxPrice] = useState<string>('')
+  const [minPrice, setMinPrice] = useState<number | ''>('')
+  const [maxPrice, setMaxPrice] = useState<number | ''>('')
 
   // Step 3: Specs & Preferences
   const [minBedrooms, setMinBedrooms] = useState<string>('2')
@@ -82,7 +83,7 @@ export default function PublishInterestPage() {
       }
       setStep(2)
     } else if (step === 2) {
-      if (!maxPrice || Number(maxPrice) <= 0) {
+      if (!maxPrice || maxPrice <= 0) {
         toast({ title: 'Informe o valor máximo do seu orçamento', variant: 'destructive' })
         return
       }
@@ -131,8 +132,8 @@ export default function PublishInterestPage() {
         state: stateUf,
         city,
         neighborhoods,
-        min_price: minPrice ? Number(minPrice) : undefined,
-        max_price: Number(maxPrice),
+        min_price: minPrice !== '' ? minPrice : undefined,
+        max_price: maxPrice,
         min_bedrooms: minBedrooms ? Number(minBedrooms) : undefined,
         min_bathrooms: minBathrooms ? Number(minBathrooms) : undefined,
         min_parking_spaces: minParking ? Number(minParking) : undefined,
@@ -356,29 +357,32 @@ export default function PublishInterestPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">
-                    Valor Mínimo (R$ opcional)
+                    Valor Mínimo (opcional)
                   </label>
-                  <Input
-                    type="number"
-                    placeholder="Ex: 500000"
+                  <CurrencyInput
                     value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
+                    onChange={setMinPrice}
+                    placeholder="R$ 500.000,00"
                     className="text-xs h-9"
                   />
+                  <span className="text-[11px] text-muted-foreground block">
+                    Digite apenas números: 500000 vira R$ 500.000,00
+                  </span>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">
                     Valor Máximo / Teto do Orçamento (R$) *
                   </label>
-                  <Input
-                    type="number"
-                    required
-                    placeholder={purpose === 'comprar' ? 'Ex: 950000' : 'Ex: 4000'}
+                  <CurrencyInput
                     value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
+                    onChange={setMaxPrice}
+                    placeholder={purpose === 'comprar' ? 'R$ 950.000,00' : 'R$ 4.000,00'}
                     className="text-xs h-9 font-semibold"
                   />
+                  <span className="text-[11px] text-muted-foreground block">
+                    Digite apenas números: 5500 vira R$ 55,00 (os 2 últimos dígitos são centavos)
+                  </span>
                 </div>
               </div>
 
@@ -528,10 +532,15 @@ export default function PublishInterestPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">Área mín. (m²)</label>
                   <Input
-                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={100000}
                     placeholder="Ex: 65"
                     value={minArea}
-                    onChange={(e) => setMinArea(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^\d]/g, '')
+                      setMinArea(v ? String(Number(v)) : '')
+                    }}
                     className="text-xs h-9"
                   />
                 </div>
