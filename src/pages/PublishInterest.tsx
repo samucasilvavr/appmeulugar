@@ -26,6 +26,11 @@ import {
   DollarSign,
   Home,
   Sparkles,
+  ShieldCheck,
+  Lock,
+  User,
+  Phone,
+  Mail,
 } from 'lucide-react'
 
 export default function PublishInterestPage() {
@@ -35,6 +40,11 @@ export default function PublishInterestPage() {
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(false)
+
+  // Contato anônimo (apenas quando não autenticado)
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
 
   // Step 1: Purpose, Type, Title
   const [purpose, setPurpose] = useState<Purpose>('comprar')
@@ -81,19 +91,40 @@ export default function PublishInterestPage() {
   }
 
   const handleSubmit = async () => {
+    // Visitante anônimo: exige nome + (telefone OU e-mail)
     if (!isAuthenticated || !user) {
-      toast({
-        title: 'Você precisa estar logado',
-        description: 'Faça login ou crie uma conta para salvar sua demanda.',
-      })
-      navigate('/login', { state: { from: { pathname: '/publicar-interesse' } } })
-      return
+      if (!contactName.trim()) {
+        toast({
+          title: 'Informe seu nome',
+          description: 'É preciso informar um nome de contato para publicar sem cadastro.',
+          variant: 'destructive',
+        })
+        setStep(3)
+        return
+      }
+      if (!contactEmail.trim() && !contactPhone.trim()) {
+        toast({
+          title: 'Informe um contato',
+          description: 'Informe telefone e/ou e-mail para os corretores poderem responder.',
+          variant: 'destructive',
+        })
+        setStep(3)
+        return
+      }
+      if (contactEmail.trim() && !/^\S+@\S+\.\S+$/.test(contactEmail.trim())) {
+        toast({
+          title: 'E-mail inválido',
+          description: 'Verifique o e-mail de contato informado.',
+          variant: 'destructive',
+        })
+        setStep(3)
+        return
+      }
     }
 
     setLoading(true)
     try {
-      await createInterest({
-        user_id: user.id,
+      const payload: Record<string, unknown> = {
         title,
         purpose,
         property_type: propertyType,
@@ -109,18 +140,30 @@ export default function PublishInterestPage() {
         preferences: JSON.stringify(selectedPreferences),
         notes,
         status: 'ativo',
-      })
+      }
+
+      if (isAuthenticated && user) {
+        payload.user_id = user.id
+      } else {
+        payload.contact_name = contactName.trim()
+        payload.contact_email = contactEmail.trim() || undefined
+        payload.contact_phone = contactPhone.trim() || undefined
+      }
+
+      await createInterest(payload as any)
 
       toast({
         title: 'Demanda publicada com sucesso!',
-        description: 'Corretores da sua região poderão enviar até 5 apresentações qualificadas.',
+        description: isAuthenticated
+          ? 'Corretores da sua região poderão enviar até 5 apresentações qualificadas.'
+          : 'Sua demanda está ativa! Crie uma conta com o mesmo e-mail para gerenciá-la e conversar nos chats.',
       })
-      navigate('/painel-interessado')
+      navigate(isAuthenticated ? '/painel-interessado' : '/')
     } catch (err: any) {
       console.error('Error creating interest:', err)
       toast({
         title: 'Erro ao publicar demanda',
-        description: err?.message || 'Tente novamente.',
+        description: err?.response?.message || err?.message || 'Tente novamente.',
         variant: 'destructive',
       })
     } finally {
@@ -144,6 +187,13 @@ export default function PublishInterestPage() {
             Descreva suas preferências em 3 etapas curtas. Seus dados de contato ficam totalmente
             protegidos.
           </CardDescription>
+
+          {!isAuthenticated && (
+            <Badge className="mx-auto mt-2 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Sem cadastro: basta informar nome e contato
+            </Badge>
+          )}
 
           {/* Stepper indicators */}
           <div className="flex items-center justify-center gap-2 pt-3">
@@ -348,6 +398,66 @@ export default function PublishInterestPage() {
           {/* ETAPA 3 */}
           {step === 3 && (
             <div className="space-y-5">
+              {/* CONTATO ANÔNIMO */}
+              {!isAuthenticated && (
+                <div className="space-y-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50/60">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-emerald-700" />
+                    <span className="text-xs font-bold text-emerald-800">
+                      Seus dados de contato (nunca aparecem no card público)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-foreground">Seu nome *</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Como podemos te chamar?"
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          className="pl-9 text-xs h-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-foreground">
+                        Telefone (WhatsApp)
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="(11) 98765-4321"
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          className="pl-9 text-xs h-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">
+                      E-mail (recomendado: permite vincular este interesse a uma conta futura)
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        className="pl-9 text-xs h-9"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-emerald-800/80">
+                    Informe telefone OU e-mail (ou os dois). Seus dados ficam ocultos: os cards
+                    públicos mostram apenas cidade, tipo, quartos e faixa de valor. Cadastre-se
+                    depois com o mesmo e-mail para gerenciar a demanda e abrir chats.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-foreground">Mín. Quartos</label>
@@ -387,6 +497,9 @@ export default function PublishInterestPage() {
                       </SelectItem>
                       <SelectItem value="3" className="text-xs">
                         3+
+                      </SelectItem>
+                      <SelectItem value="4" className="text-xs">
+                        4+
                       </SelectItem>
                     </SelectContent>
                   </Select>

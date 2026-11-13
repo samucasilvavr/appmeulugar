@@ -71,6 +71,9 @@ export interface InterestRecord {
   preferences?: string | string[]
   notes?: string
   status: Status
+  contact_name?: string
+  contact_email?: string
+  contact_phone?: string
   created: string
   updated: string
   expand?: {
