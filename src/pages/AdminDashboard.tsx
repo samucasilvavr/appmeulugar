@@ -22,6 +22,7 @@ import {
   updateContactStatus,
   getNotificationLogs,
 } from '@/services/admin'
+import UsersAdminPanel from '@/components/admin/UsersAdminPanel'
 import { getProperties, updateProperty } from '@/services/properties'
 import { getInterests, updateInterest } from '@/services/interests'
 import type {
@@ -302,6 +303,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="notificacoes" className="text-xs font-semibold gap-1.5">
             <Bell className="h-4 w-4 text-amber-600" />
             Logs de Notificações ({notificationLogs.length})
+          </TabsTrigger>
+          <TabsTrigger value="usuarios" className="text-xs font-semibold gap-1.5">
+            <Users className="h-4 w-4 text-blue-600" />
+            Gestão de Usuários
           </TabsTrigger>
         </TabsList>
 
@@ -607,6 +612,11 @@ export default function AdminDashboard() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* TAB 5: USER MANAGEMENT */}
+        <TabsContent value="usuarios" className="space-y-4">
+          <UsersAdminPanel />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,5 +1,102 @@
 import pb from '@/lib/pocketbase/client'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 import type { ImportedContactRecord, NotificationLogRecord } from '@/types/database'
+
+// ---------- Gestão de usuários (somente admin) ----------
+// Passa pelas rotas /backend/v1/appmeulugar/admin/users (pb_hooks/admin_users.pb.js),
+// pois o admin do app NÃO é superusuário do PocketBase: só essas rotas conseguem
+// ler/alterar o e-mail de outros usuários e criar novas contas (inclusive admin).
+
+export type AdminManagedProfile = 'interessado' | 'corretor' | 'admin'
+
+export interface AdminUserRecord {
+  id: string
+  email: string
+  name: string
+  profile: AdminManagedProfile
+  phone: string
+  state: string
+  city: string
+  creci: string
+  creci_uf: string
+  real_estate: string
+  regions: string
+  creci_status: '' | 'pendente' | 'aprovado' | 'rejeitado'
+  verified: boolean
+  created: string
+  updated: string
+}
+
+export interface AdminUserUpdatePayload {
+  name?: string
+  email?: string
+  phone?: string
+  state?: string
+  city?: string
+  creci?: string
+  creci_uf?: string
+  real_estate?: string
+  regions?: string
+  profile?: AdminManagedProfile
+  creci_status?: '' | 'pendente' | 'aprovado' | 'rejeitado'
+  verified?: boolean
+  password?: string
+}
+
+export async function getAllUsers(): Promise<AdminUserRecord[]> {
+  try {
+    const res = await pb.send<{ items: AdminUserRecord[] }>('/backend/v1/appmeulugar/admin/users', {
+      method: 'GET',
+    })
+    return res.items || []
+  } catch (err) {
+    console.error('getAllUsers error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+export async function adminUpdateUser(
+  id: string,
+  payload: AdminUserUpdatePayload,
+): Promise<AdminUserRecord> {
+  try {
+    const res = await pb.send<{ item: AdminUserRecord }>(
+      `/backend/v1/appmeulugar/admin/users/${id}`,
+      { method: 'PATCH', body: payload },
+    )
+    return res.item
+  } catch (err) {
+    console.error('adminUpdateUser error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+export interface AdminCreateUserPayload {
+  name: string
+  email: string
+  password: string
+  profile: AdminManagedProfile
+  phone?: string
+  state?: string
+  city?: string
+  creci?: string
+  creci_uf?: string
+  real_estate?: string
+  regions?: string
+}
+
+export async function adminCreateUser(payload: AdminCreateUserPayload): Promise<AdminUserRecord> {
+  try {
+    const res = await pb.send<{ item: AdminUserRecord }>('/backend/v1/appmeulugar/admin/users', {
+      method: 'POST',
+      body: payload,
+    })
+    return res.item
+  } catch (err) {
+    console.error('adminCreateUser error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
 
 export async function getImportedContacts(): Promise<ImportedContactRecord[]> {
   try {
