@@ -128,7 +128,7 @@ export default function Index() {
               <div className="space-y-1">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
                   <Building2 className="h-4 w-4" />
-                  Sou Corretor ou Proprietário
+                  Sou Corretor de Imóveis
                 </span>
                 <h3 className="text-lg font-bold text-foreground group-hover:text-emerald-600 transition-colors">
                   Oferecer um Imóvel
