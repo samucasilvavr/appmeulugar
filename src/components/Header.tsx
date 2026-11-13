@@ -156,6 +156,11 @@ export function Header() {
                     </>
                   )}
 
+                  <DropdownMenuItem onClick={() => navigate('/perfil')}>
+                    <User className="mr-2 h-4 w-4 text-primary" />
+                    Meu Perfil
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={() => navigate('/conversas')}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Conversas

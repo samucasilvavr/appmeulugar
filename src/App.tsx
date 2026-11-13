@@ -21,6 +21,7 @@ import BrokerDashboard from './pages/BrokerDashboard'
 import ViewPresentationPage from './pages/ViewPresentation'
 import ChatPage from './pages/Conversas'
 import AdminDashboard from './pages/AdminDashboard'
+import ProfilePage from './pages/Profile'
 
 const App = () => (
   <BrowserRouter>
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
             <Route path="/verificar-email" element={<VerifyEmailPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+            <Route path="/perfil" element={<ProfilePage />} />
             <Route path="/publicar-interesse" element={<PublishInterestPage />} />
             <Route path="/publicar-imovel" element={<PublishPropertyPage />} />
             <Route path="/painel-interessado" element={<BuyerDashboard />} />
