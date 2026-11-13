@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import type { UserProfile } from '@/types/database'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -8,7 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Home, Mail, Lock, LogIn, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
@@ -19,11 +20,19 @@ export default function LoginPage() {
 
   const from = (location.state as any)?.from?.pathname || '/'
 
+  // Cada perfil cai no seu painel; "from" (rota protegida de origem) tem prioridade
+  const routeForProfile = (profile?: UserProfile) => {
+    if (profile === 'admin') return '/admin'
+    if (profile === 'corretor') return '/painel-corretor'
+    if (profile === 'interessado') return '/painel-interessado'
+    return '/'
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await signIn(email, password)
+    const { error, record } = await signIn(email, password)
     setLoading(false)
 
     if (error) {
@@ -35,11 +44,12 @@ export default function LoginPage() {
       return
     }
 
+    const activeProfile = (record as any)?.profile || user?.profile
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     })
-    navigate(from, { replace: true })
+    navigate(from !== '/' ? from : routeForProfile(activeProfile), { replace: true })
   }
 
   // Quick helper login buttons for testing

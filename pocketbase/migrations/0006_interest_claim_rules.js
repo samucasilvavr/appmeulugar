@@ -10,17 +10,19 @@
 migrate(
   (app) => {
     const col = app.findCollectionByNameOrId('interests')
-    col.createRule = 'user_id = @request.auth.id'
-    col.updateRule = 'user_id = @request.auth.id'
-    col.deleteRule = 'user_id = @request.auth.id'
+    // Permite criação por autenticado (atrelado ao seu próprio user_id)
+    // OU criação anônima sem cadastro (user_id vazio)
+    col.createRule =
+      "(@request.auth.id != '' && user_id = @request.auth.id) || (@request.auth.id = '' && user_id = '')"
+    col.updateRule = "@request.auth.id != '' && user_id = @request.auth.id"
+    col.deleteRule = "@request.auth.id != '' && user_id = @request.auth.id"
     col.listRule = ''
     col.viewRule = ''
     app.save(col)
   },
   (app) => {
     const col = app.findCollectionByNameOrId('interests')
-    col.createRule =
-      "(@request.auth.id != '' && user_id = @request.auth.id) || (@request.auth.id = '' && user_id = '')"
+    col.createRule = "@request.auth.id != '' && user_id = @request.auth.id"
     col.updateRule = "@request.auth.id != '' && user_id = @request.auth.id"
     col.deleteRule = "@request.auth.id != '' && user_id = @request.auth.id"
     col.listRule = ''

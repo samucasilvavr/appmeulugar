@@ -21,7 +21,7 @@ interface AuthContextType {
   user: UserRecord | null
   loading: boolean
   isAuthenticated: boolean
-  signIn: (email: string, pass: string) => Promise<{ error: any }>
+  signIn: (email: string, pass: string) => Promise<{ error: any; record?: UserRecord }>
   signUp: (data: SignUpData) => Promise<{ error: any }>
   signOut: () => void
   refreshUser: () => Promise<void>
@@ -64,8 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, pass: string) => {
     try {
       const authData = await pb.collection('users').authWithPassword<UserRecord>(email, pass)
-      setUser(authData.record)
-      return { error: null }
+      const record = authData.record as unknown as UserRecord
+      setUser(record)
+      return { error: null, record }
     } catch (error) {
       return { error }
     }
