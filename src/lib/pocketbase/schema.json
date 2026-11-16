@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-13T18:40:42.991Z",
+  "generatedAt": "2026-11-16T19:07:54.112Z",
   "collections": [
     {
       "name": "users",
@@ -29,30 +29,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "profile",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "interessado",
-            "corretor",
-            "admin"
-          ]
+          "selectValues": ["interessado", "corretor", "admin"]
         },
         {
           "name": "phone",
@@ -101,11 +92,13 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "pendente",
-            "aprovado",
-            "rejeitado"
-          ]
+          "selectValues": ["pendente", "aprovado", "rejeitado"]
+        },
+        {
+          "name": "optout_notifications",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -148,24 +141,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "comprar",
-            "alugar"
-          ]
+          "selectValues": ["comprar", "alugar"]
         },
         {
           "name": "property_type",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "apartamento",
-            "casa",
-            "cobertura",
-            "terreno",
-            "comercial",
-            "rural"
-          ]
+          "selectValues": ["apartamento", "casa", "cobertura", "terreno", "comercial", "rural"]
         },
         {
           "name": "state",
@@ -262,30 +245,21 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "ativo",
-            "pausado",
-            "encerrado"
-          ]
+          "selectValues": ["ativo", "pausado", "encerrado"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -323,24 +297,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "comprar",
-            "alugar"
-          ]
+          "selectValues": ["comprar", "alugar"]
         },
         {
           "name": "property_type",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "apartamento",
-            "casa",
-            "cobertura",
-            "terreno",
-            "comercial",
-            "rural"
-          ]
+          "selectValues": ["apartamento", "casa", "cobertura", "terreno", "comercial", "rural"]
         },
         {
           "name": "state",
@@ -413,30 +377,21 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "ativo",
-            "pausado",
-            "encerrado"
-          ]
+          "selectValues": ["ativo", "pausado", "encerrado"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "contact_name",
@@ -514,12 +469,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "pendente",
-            "aceita",
-            "recusada",
-            "expirada"
-          ]
+          "selectValues": ["pendente", "aceita", "recusada", "expirada"]
         },
         {
           "name": "rejection_reason",
@@ -538,19 +488,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -628,29 +573,21 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "ativo",
-            "arquivado"
-          ]
+          "selectValues": ["ativo", "arquivado"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -700,24 +637,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_msgs_chat ON messages (chat_id, created ASC)"
-      ]
+      "indexes": ["CREATE INDEX idx_msgs_chat ON messages (chat_id, created ASC)"]
     },
     {
       "name": "favorites",
@@ -749,24 +679,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE UNIQUE INDEX idx_fav_user_prop ON favorites (user_id, property_id)"
-      ]
+      "indexes": ["CREATE UNIQUE INDEX idx_fav_user_prop ON favorites (user_id, property_id)"]
     },
     {
       "name": "imported_contacts",
@@ -775,7 +698,7 @@
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != ''",
+        "update": "@request.auth.profile = 'admin' || (authorization_status != 'descadastrado' && @request.body.authorization_status:changed = false)",
         "delete": "@request.auth.id != ''"
       },
       "fields": [
@@ -826,33 +749,26 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "autorizado",
-            "pendente",
-            "descadastrado"
-          ]
+          "selectValues": ["autorizado", "pendente", "descadastrado"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_imported_contacts_email` ON `imported_contacts` (lower(email))"
+      ]
     },
     {
       "name": "notification_logs",
@@ -882,11 +798,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "corretor",
-            "interessado",
-            "contato_importado"
-          ]
+          "selectValues": ["corretor", "interessado", "contato_importado"]
         },
         {
           "name": "subject",
@@ -912,11 +824,7 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "enviado",
-            "falha",
-            "descadastrado"
-          ]
+          "selectValues": ["enviado", "falha", "descadastrado"]
         },
         {
           "name": "details",
@@ -929,22 +837,81 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "email_templates",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.profile = 'admin'",
+        "view": "@request.auth.profile = 'admin'",
+        "create": "@request.auth.profile = 'admin'",
+        "update": "@request.auth.profile = 'admin'",
+        "delete": "@request.auth.profile = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "slug",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "body_html",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "variables",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_email_templates_slug ON email_templates (slug)"]
     }
   ]
 }

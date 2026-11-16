@@ -22,6 +22,9 @@ import ViewPresentationPage from './pages/ViewPresentation'
 import ChatPage from './pages/Conversas'
 import AdminDashboard from './pages/AdminDashboard'
 import ProfilePage from './pages/Profile'
+import PrivacyPage from './pages/Privacy'
+import TermsPage from './pages/Terms'
+import OptOutPage from './pages/OptOut'
 
 const App = () => (
   <BrowserRouter>
@@ -46,6 +49,9 @@ const App = () => (
             <Route path="/apresentacao/:id" element={<ViewPresentationPage />} />
             <Route path="/conversas" element={<ChatPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/privacidade" element={<PrivacyPage />} />
+            <Route path="/termos" element={<TermsPage />} />
+            <Route path="/descadastrar" element={<OptOutPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

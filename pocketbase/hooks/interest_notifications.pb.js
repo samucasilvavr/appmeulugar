@@ -116,25 +116,107 @@ function interestNotificationBody() {
         return text
       }
 
+      // Lê o template editável do admin (email_templates). Nunca lança.
+      function loadTemplate(slug, fallbackSubject, fallbackBody) {
+        try {
+          var rec = app.findFirstRecordByFilter('email_templates', 'slug = {:slug}', '', 1, 0, {
+            slug: slug,
+          })
+          if (rec) {
+            return {
+              subject: rec.getString('subject') || fallbackSubject,
+              body: rec.getString('body_html') || fallbackBody,
+            }
+          }
+        } catch (_) {}
+        return { subject: fallbackSubject, body: fallbackBody }
+      }
+
+      // Substitui as variáveis [xxx] do template editável.
+      function renderTemplate(tpl, vars) {
+        var out = String(tpl)
+        for (var key in vars) {
+          if (!Object.prototype.hasOwnProperty.call(vars, key)) continue
+          out = out.split('[' + key + ']').join(String(vars[key] == null ? '' : vars[key]))
+        }
+        return out
+      }
+
+      function isOptedOut(email) {
+        // 1. Corretor cadastrado marcou descadastro de notificações.
+        try {
+          var u = app.findFirstRecordByFilter('users', 'email = {:email}', '', 1, 0, {
+            email: email,
+          })
+          if (u && u.getBool('optout_notifications')) return true
+        } catch (_) {}
+        // 2. Contato importado descadastrado.
+        try {
+          var c = app.findFirstRecordByFilter(
+            'imported_contacts',
+            "email = {:email} && authorization_status = 'descadastrado'",
+            '',
+            1,
+            0,
+            { email: email },
+          )
+          if (c) return true
+        } catch (_) {}
+        // 3. Descadastro registrado em notification_logs (status='descadastrado').
+        try {
+          var lg = app.findRecordsByFilter(
+            'notification_logs',
+            "recipient_email = {:email} && status = 'descadastrado'",
+            '',
+            1,
+            0,
+            { email: email },
+          )
+          if (lg.length > 0) return true
+        } catch (_) {}
+        return false
+      }
+
       function notifyBroker(broker, propertyIds) {
         var interestId = interest.id
         var email = broker.getString('email')
-        var subject = 'Novo interessado procurando imóvel em ' + interest.getString('city')
+        if (isOptedOut(email)) return
         if (alreadySent(email, 'match_demanda', interestId)) return
 
+        var tpl = loadTemplate(
+          'match_corretor',
+          'Novo interessado procurando imóvel em [cidade]',
+          '<div style="font-family:Arial,sans-serif;color:#1f2937;"><p>Olá, [nome].</p>' +
+            '<p>Uma pessoa está procurando [descricao]. Você possui um imóvel compatível.</p>' +
+            '<p>Acesse o AppMeuLugar para conhecer essa oportunidade.</p>' +
+            '[link-demanda]</div>',
+        )
         var link = siteUrl() + '/painel-corretor?enviar_para=' + interestId
-        var html =
-          '<div style="font-family:Arial,sans-serif;color:#1f2937;">' +
-          '<p>Olá, ' +
-          escapeHtml(broker.getString('name') || 'corretor') +
-          '.</p>' +
-          '<p>Uma pessoa está procurando ' +
-          escapeHtml(describe()) +
-          '. ' +
-          'Você possui um imóvel compatível.</p>' +
-          '<p>Acesse o AppMeuLugar para conhecer essa oportunidade.</p>' +
-          button(link, 'Visualizar demanda') +
-          '</div>'
+        var html = renderTemplate(tpl.body, {
+          nome: broker.getString('name') || 'corretor',
+          descricao: describe(),
+          tipo: interest.getString('property_type'),
+          finalidade: interest.getString('purpose') === 'alugar' ? 'alugar' : 'comprar',
+          cidade: interest.getString('city'),
+          estado: interest.getString('state'),
+          quartos:
+            interest.getInt('min_bedrooms') > 0 ? interest.getInt('min_bedrooms') : 'não informado',
+          valor: money(interest.getFloat('max_price')),
+          'link-demanda': button(link, 'Visualizar demanda'),
+          'link-descadastrar': button(
+            siteUrl() + '/descadastrar?email=' + encodeURIComponent(email),
+            'Não quero receber estes e-mails',
+          ),
+        })
+        var subject = renderTemplate(tpl.subject, {
+          nome: broker.getString('name') || 'corretor',
+          tipo: interest.getString('property_type'),
+          cidade: interest.getString('city'),
+          estado: interest.getString('state'),
+          quartos:
+            interest.getInt('min_bedrooms') > 0 ? interest.getInt('min_bedrooms') : 'não informado',
+          valor: money(interest.getFloat('max_price')),
+        })
 
         var result = sendMail(email, subject, html)
         writeLog({
@@ -156,7 +238,6 @@ function interestNotificationBody() {
       function notifyImportedContacts() {
         var interestId = interest.id
         var state = interest.getString('state')
-        var subject = 'Novo interesse de imóvel publicado em ' + state
         var contacts = []
         try {
           contacts = app.findRecordsByFilter(
@@ -172,6 +253,19 @@ function interestNotificationBody() {
           return
         }
 
+        var tpl = loadTemplate(
+          'geral_lista_importada',
+          'Novo interesse de imóvel publicado em [estado]',
+          '<div style="font-family:Arial,sans-serif;color:#1f2937;"><p>Olá, [nome].</p>' +
+            '<p>Houve um novo interesse de imóvel publicado em [estado]: [descricao].</p>' +
+            '<p>Como não temos seus dados cadastrais, este aviso foi enviado com base em ' +
+            'uma lista pública de credenciados da Caixa Econômica Federal.</p>' +
+            '<p>Veja as demandas publicadas na página pública do AppMeuLugar.</p>' +
+            '[link-demanda]' +
+            '<p style="font-size:12px;color:#6b7280;">Para não receber mais estes e-mails, ' +
+            'responda esta mensagem solicitando o descadastro ou use o link: [link-descadastrar-texto]</p>' +
+            '</div>',
+        )
         var link = siteUrl() + '/buscar?tipo=interesses'
         for (var i = 0; i < contacts.length; i++) {
           var contact = contacts[i]
@@ -179,19 +273,34 @@ function interestNotificationBody() {
           if (!email) continue
           if (alreadySent(email, 'geral', interestId)) continue
 
-          var html =
-            '<div style="font-family:Arial,sans-serif;color:#1f2937;">' +
-            '<p>Olá, ' +
-            escapeHtml(contact.getString('name') || 'tudo bem') +
-            '.</p>' +
-            '<p>Houve um novo interesse de imóvel publicado em ' +
-            escapeHtml(state) +
-            ': ' +
-            escapeHtml(describe()) +
-            '.</p>' +
-            '<p>Veja as demandas publicadas na página pública do AppMeuLugar.</p>' +
-            button(link, 'Ver demandas') +
-            '</div>'
+          var unsubscribeUrl = siteUrl() + '/descadastrar?email=' + encodeURIComponent(email)
+          var html = renderTemplate(tpl.body, {
+            nome: contact.getString('name') || 'tudo bem',
+            descricao: describe(),
+            tipo: interest.getString('property_type'),
+            finalidade: interest.getString('purpose') === 'alugar' ? 'alugar' : 'comprar',
+            cidade: interest.getString('city'),
+            estado: state,
+            quartos:
+              interest.getInt('min_bedrooms') > 0
+                ? interest.getInt('min_bedrooms')
+                : 'não informado',
+            valor: money(interest.getFloat('max_price')),
+            'link-demanda': button(link, 'Ver demandas'),
+            'link-descadastrar': button(unsubscribeUrl, 'Não quero receber estes e-mails'),
+            'link-descadastrar-texto': unsubscribeUrl,
+          })
+          var subject = renderTemplate(tpl.subject, {
+            nome: contact.getString('name') || 'tudo bem',
+            tipo: interest.getString('property_type'),
+            cidade: interest.getString('city'),
+            estado: state,
+            quartos:
+              interest.getInt('min_bedrooms') > 0
+                ? interest.getInt('min_bedrooms')
+                : 'não informado',
+            valor: money(interest.getFloat('max_price')),
+          })
 
           var result = sendMail(email, subject, html)
           writeLog({
