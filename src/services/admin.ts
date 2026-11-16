@@ -1,6 +1,10 @@
 import pb from '@/lib/pocketbase/client'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
-import type { ImportedContactRecord, NotificationLogRecord } from '@/types/database'
+import type {
+  EmailTemplateRecord,
+  ImportedContactRecord,
+  NotificationLogRecord,
+} from '@/types/database'
 
 // ---------- Gestão de usuários (somente admin) ----------
 // Passa pelas rotas /backend/v1/appmeulugar/admin/users (pb_hooks/admin_users.pb.js),
@@ -22,6 +26,7 @@ export interface AdminUserRecord {
   real_estate: string
   regions: string
   creci_status: '' | 'pendente' | 'aprovado' | 'rejeitado'
+  blocked: boolean
   verified: boolean
   created: string
   updated: string
@@ -94,6 +99,93 @@ export async function adminCreateUser(payload: AdminCreateUserPayload): Promise<
     return res.item
   } catch (err) {
     console.error('adminCreateUser error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+export async function adminSetUserBlocked(id: string, blocked: boolean): Promise<AdminUserRecord> {
+  try {
+    const res = await pb.send<{ item: AdminUserRecord }>(
+      `/backend/v1/appmeulugar/admin/users/${id}/block`,
+      { method: 'PATCH', body: { blocked } },
+    )
+    return res.item
+  } catch (err) {
+    console.error('adminSetUserBlocked error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+export interface AdminDeleteResult {
+  deleted: boolean
+  removed: {
+    interests: number
+    properties: number
+    presentations: number
+    chats: number
+    favorites: number
+  }
+}
+
+export async function adminDeleteUser(id: string): Promise<AdminDeleteResult> {
+  try {
+    return await pb.send<AdminDeleteResult>(`/backend/v1/appmeulugar/admin/users/${id}`, {
+      method: 'DELETE',
+    })
+  } catch (err) {
+    console.error('adminDeleteUser error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+// ---------- Templates de e-mail editáveis (coleção email_templates) ----------
+
+export async function getEmailTemplates(): Promise<EmailTemplateRecord[]> {
+  try {
+    const records = await pb.collection('email_templates').getList<EmailTemplateRecord>(1, 50, {
+      sort: 'slug',
+    })
+    return records.items
+  } catch (err) {
+    console.error('getEmailTemplates error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+export async function updateEmailTemplate(
+  id: string,
+  payload: { subject?: string; body_html?: string },
+): Promise<EmailTemplateRecord> {
+  try {
+    return await pb.collection('email_templates').update<EmailTemplateRecord>(id, payload)
+  } catch (err) {
+    console.error('updateEmailTemplate error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+// ---------- Importação de contatos por ARQUIVO (CSV / HTML da Caixa / XLSX) ----------
+// Usa a rota customizada /backend/v1/appmeulugar/admin/import-contacts
+// (pb_hooks/import_contacts.pb.js): dedupe por e-mail, origem "Caixa Econômica
+// Federal — credenciados". Retorna quantos entraram e quantos duplicados.
+
+export interface ImportContactsResult {
+  imported: number
+  duplicates: number
+  invalid: number
+  total: number
+}
+
+export async function importContactsFile(file: File): Promise<ImportContactsResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+  try {
+    return await pb.send<ImportContactsResult>('/backend/v1/appmeulugar/admin/import-contacts', {
+      method: 'POST',
+      body: formData,
+    })
+  } catch (err) {
+    console.error('importContactsFile error:', err)
     throw new Error(getErrorMessage(err))
   }
 }

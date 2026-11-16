@@ -19,8 +19,21 @@ export interface UserRecord {
   real_estate?: string
   regions?: string
   creci_status?: CreciStatus
+  blocked?: boolean
   created: string
   updated: string
+}
+
+export interface EmailTemplateRecord {
+  id: string
+  slug: string
+  title: string
+  description?: string
+  subject: string
+  body_html: string
+  variables?: string
+  created?: string
+  updated?: string
 }
 
 export interface PropertyRecord {

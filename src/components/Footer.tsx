@@ -90,11 +90,22 @@ export function Footer() {
             <ul className="space-y-2 text-xs">
               <li className="flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5 text-primary" />
-                <span>contato@meulugar.com.br</span>
+                <span>contato@appmeulugar.com.br</span>
               </li>
-              <li className="flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-primary" />
-                <span>Atendimento Brasil</span>
+              <li>
+                <Link to="/privacidade" className="hover:text-foreground transition-colors">
+                  Política de Privacidade
+                </Link>
+              </li>
+              <li>
+                <Link to="/termos" className="hover:text-foreground transition-colors">
+                  Termos de Uso
+                </Link>
+              </li>
+              <li>
+                <Link to="/descadastrar" className="hover:text-foreground transition-colors">
+                  Descadastrar de e-mails
+                </Link>
               </li>
               <li className="text-[11px] text-muted-foreground/70 pt-2">
                 Conectando corretores éticos e pessoas em busca do seu novo lugar.

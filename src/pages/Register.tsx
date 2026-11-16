@@ -36,10 +36,21 @@ export default function RegisterPage() {
   const [realEstate, setRealEstate] = useState('')
   const [regions, setRegions] = useState('')
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!acceptedTerms) {
+      toast({
+        title: 'Aceite obrigatório',
+        description:
+          'É necessário aceitar a Política de Privacidade e os Termos de Uso para concluir o cadastro.',
+        variant: 'destructive',
+      })
+      return
+    }
 
     if (password !== passwordConfirm) {
       toast({
@@ -344,9 +355,34 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* LGPD: aceite obrigatório de privacidade e termos */}
+            <div className="flex items-start gap-2.5 rounded-lg border bg-muted/30 p-3">
+              <input
+                id="accept-terms"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+              />
+              <label
+                htmlFor="accept-terms"
+                className="text-[11px] leading-relaxed text-muted-foreground"
+              >
+                Declaro que li e aceito a{' '}
+                <Link to="/privacidade" className="font-semibold text-primary hover:underline">
+                  Política de Privacidade
+                </Link>{' '}
+                e os{' '}
+                <Link to="/termos" className="font-semibold text-primary hover:underline">
+                  Termos de Uso
+                </Link>
+                , autorizando o tratamento dos meus dados nos termos da LGPD para uso da plataforma.
+              </label>
+            </div>
+
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || !acceptedTerms}
               className="w-full h-10 font-semibold text-xs shadow-sm mt-2"
             >
               {loading ? 'Criando conta...' : 'Concluir cadastro'}

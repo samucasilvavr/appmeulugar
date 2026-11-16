@@ -12,6 +12,11 @@
 //         status do CRECI, status da conta = verified)
 //   POST  /backend/v1/appmeulugar/admin/users        — cria novo usuário (perfil livre,
 //         inclusive 'admin') com nome, e-mail e senha
+//   PATCH /backend/v1/appmeulugar/admin/users/{id}/block  body {blocked:true|false}
+//         — bloqueia (impede login/uso) ou desbloqueia o usuário
+//   DELETE /backend/v1/appmeulugar/admin/users/{id}  — exclui o usuário definitivamente
+//         junto com interesses, imóveis, apresentações, chats/mensagens e favoritos dele
+//         (o admin não pode excluir o próprio usuário).
 //
 // Nota de runtime: o JSVM do PocketBase executa callbacks em pools de VM
 // separados — TODA a lógica precisa viver DENTRO de cada callback, sem
@@ -45,6 +50,7 @@ routerAdd(
         real_estate: u.getString('real_estate'),
         regions: u.getString('regions'),
         creci_status: u.getString('creci_status'),
+        blocked: u.getBool('blocked'),
         verified: u.getBool('verified'),
         created: u.getString('created'),
         updated: u.getString('updated'),
@@ -57,6 +63,93 @@ routerAdd(
   requireAppAdmin,
 )
 
+// ---- BLOQUEAR / DESBLOQUEAR ----
+routerAdd(
+  'PATCH',
+  '/backend/v1/appmeulugar/admin/users/{id}/block',
+  (e) => {
+    const id = e.request.pathValue('id')
+    let record
+    try {
+      record = e.app.findRecordById('users', id)
+    } catch (_) {
+      throw new NotFoundError('Usuário não encontrado.')
+    }
+    const body = e.requestInfo().body || {}
+
+    // Proteção: um admin não pode bloquear o próprio acesso de admin.
+    if (record.id === e.auth.id && body.blocked !== false) {
+      throw new BadRequestError('Você não pode bloquear o seu próprio usuário.')
+    }
+
+    record.set('blocked', !!body.blocked)
+    try {
+      e.app.save(record)
+    } catch (err) {
+      throw new BadRequestError(
+        'Não foi possível atualizar o bloqueio: ' + String((err && err.message) || err || ''),
+      )
+    }
+    return e.json(200, { item: { id: record.id, blocked: record.getBool('blocked') } })
+  },
+  requireAppAdmin,
+)
+
+// ---- EXCLUIR (com limpeza dos registros vinculados) ----
+routerAdd(
+  'DELETE',
+  '/backend/v1/appmeulugar/admin/users/{id}',
+  (e) => {
+    const id = e.request.pathValue('id')
+    let record
+    try {
+      record = e.app.findRecordById('users', id)
+    } catch (_) {
+      throw new NotFoundError('Usuário não encontrado.')
+    }
+
+    // Proteção: o admin nunca exclui o próprio usuário (evita lockout).
+    if (record.id === e.auth.id) {
+      throw new BadRequestError('Você não pode excluir o seu próprio usuário.')
+    }
+
+    const app = e.app
+    const removed = { interests: 0, properties: 0, presentations: 0, chats: 0, favorites: 0 }
+
+    function deleteAll(collection, filter, params, key) {
+      try {
+        const rows = app.findRecordsByFilter(collection, filter, '', 500, 0, params)
+        for (var i = 0; i < rows.length; i++) {
+          try {
+            app.delete(rows[i])
+            removed[key]++
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+
+    deleteAll('favorites', 'user_id = {:uid}', { uid: id }, 'favorites')
+    deleteAll('presentations', 'buyer_id = {:uid}', { uid: id }, 'presentations')
+    deleteAll('presentations', 'broker_id = {:uid}', { uid: id }, 'presentations')
+    deleteAll('messages', 'sender_id = {:uid}', { uid: id }, 'chats')
+    deleteAll('chats', 'buyer_id = {:uid}', { uid: id }, 'chats')
+    deleteAll('chats', 'broker_id = {:uid}', { uid: id }, 'chats')
+    deleteAll('interests', 'user_id = {:uid}', { uid: id }, 'interests')
+    deleteAll('properties', 'user_id = {:uid}', { uid: id }, 'properties')
+
+    try {
+      app.delete(record)
+    } catch (err) {
+      throw new BadRequestError(
+        'Não foi possível excluir o usuário: ' + String((err && err.message) || err || ''),
+      )
+    }
+    return e.json(200, { deleted: true, removed: removed })
+  },
+  requireAppAdmin,
+)
+
+// ---- EDITAR usuário (PATCH com todos os campos) ----
 routerAdd(
   'PATCH',
   '/backend/v1/appmeulugar/admin/users/{id}',
@@ -82,6 +175,7 @@ routerAdd(
         real_estate: u.getString('real_estate'),
         regions: u.getString('regions'),
         creci_status: u.getString('creci_status'),
+        blocked: u.getBool('blocked'),
         verified: u.getBool('verified'),
         created: u.getString('created'),
         updated: u.getString('updated'),

@@ -21,7 +21,12 @@ import {
   createImportedContact,
   updateContactStatus,
   getNotificationLogs,
+  getEmailTemplates,
+  updateEmailTemplate,
+  importContactsFile,
 } from '@/services/admin'
+import type { EmailTemplateRecord } from '@/types/database'
+import { Mail } from 'lucide-react'
 import UsersAdminPanel from '@/components/admin/UsersAdminPanel'
 import { getProperties, updateProperty } from '@/services/properties'
 import { getInterests, updateInterest } from '@/services/interests'
@@ -65,6 +70,38 @@ export default function AdminDashboard() {
   const [csvText, setCsvText] = useState('')
   const [csvSource, setCsvSource] = useState('Importação Feirão 2025')
   const [importing, setImporting] = useState(false)
+
+  // File import (CSV / HTML da Caixa / XLSX) via rota backend
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [fileImporting, setFileImporting] = useState(false)
+  const [fileImportResult, setFileImportResult] = useState<{
+    imported: number
+    duplicates: number
+    invalid: number
+    total: number
+  } | null>(null)
+
+  // E-mail templates state
+  const [templates, setTemplates] = useState<EmailTemplateRecord[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
+
+  const loadTemplates = async () => {
+    setTemplatesLoading(true)
+    try {
+      const list = await getEmailTemplates()
+      setTemplates(list)
+    } catch (err) {
+      console.error('Erro ao carregar templates de e-mail:', err)
+      toast({
+        title: 'Erro ao carregar templates',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setTemplatesLoading(false)
+    }
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -114,6 +151,7 @@ export default function AdminDashboard() {
       return
     }
     loadData()
+    loadTemplates()
   }, [user, isAuthenticated])
 
   const handleUpdateCreci = async (brokerId: string, newStatus: 'aprovado' | 'rejeitado') => {
@@ -215,6 +253,56 @@ export default function AdminDashboard() {
     }
   }
 
+  // Import contacts from FILE (CSV, HTML da Caixa ou XLSX) via rota backend
+  const handleImportFile = async () => {
+    if (!importFile) return
+    setFileImporting(true)
+    setFileImportResult(null)
+    try {
+      const result = await importContactsFile(importFile)
+      setFileImportResult(result)
+      toast({
+        title: 'Importação concluída!',
+        description: `${result.imported} contato(s) importado(s), ${result.duplicates} duplicado(s) ignorado(s).`,
+      })
+      setImportFile(null)
+      loadData()
+    } catch (err) {
+      console.error('File import error:', err)
+      toast({
+        title: 'Erro na importação do arquivo',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setFileImporting(false)
+    }
+  }
+
+  const handleSaveTemplate = async (tpl: EmailTemplateRecord) => {
+    setSavingTemplateId(tpl.id)
+    try {
+      const updated = await updateEmailTemplate(tpl.id, {
+        subject: tpl.subject,
+        body_html: tpl.body_html,
+      })
+      setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      toast({
+        title: 'Template salvo!',
+        description: `O template "${tpl.slug}" foi atualizado.`,
+      })
+    } catch (err) {
+      console.error('Erro ao salvar template:', err)
+      toast({
+        title: 'Erro ao salvar template',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setSavingTemplateId(null)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
@@ -303,6 +391,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="notificacoes" className="text-xs font-semibold gap-1.5">
             <Bell className="h-4 w-4 text-amber-600" />
             Logs de Notificações ({notificationLogs.length})
+          </TabsTrigger>
+          <TabsTrigger value="emails" className="text-xs font-semibold gap-1.5">
+            <Mail className="h-4 w-4 text-violet-600" />
+            E-mails
           </TabsTrigger>
           <TabsTrigger value="usuarios" className="text-xs font-semibold gap-1.5">
             <Users className="h-4 w-4 text-blue-600" />
@@ -505,6 +597,53 @@ export default function AdminDashboard() {
                 className="text-xs font-mono"
               />
             </div>
+
+            <div className="rounded-lg border border-dashed p-4 space-y-3">
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-foreground">
+                  Importar por ARQUIVO (recomendado)
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  Envie um arquivo <strong>CSV</strong>, o{' '}
+                  <strong>HTML da lista de credenciados da Caixa Econômica Federal</strong> ou um{' '}
+                  <strong>XLSX</strong>. Duplicados (mesmo e-mail) são ignorados automaticamente e
+                  marcados com a origem "Caixa Econômica Federal — credenciados" quando aplicável.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <Input
+                  type="file"
+                  accept=".csv,text/csv,.html,.htm,.xlsx"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null
+                    setImportFile(f)
+                    setFileImportResult(null)
+                  }}
+                  className="text-xs h-9"
+                />
+                <Button
+                  onClick={handleImportFile}
+                  disabled={fileImporting || !importFile}
+                  className="text-xs font-semibold h-9 shadow-sm shrink-0"
+                >
+                  <Upload className="h-4 w-4 mr-1.5" />
+                  {fileImporting ? 'Importando arquivo...' : 'Enviar e importar'}
+                </Button>
+              </div>
+              {fileImportResult && (
+                <div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 text-xs space-y-1">
+                  <p className="font-semibold text-emerald-800">
+                    Importação concluída: {fileImportResult.imported} novo(s) contato(s)
+                    importado(s) , {fileImportResult.duplicates} duplicado(s) ignorado(s)
+                  </p>
+                  <p className="text-emerald-700 text-[11px]">
+                    Total de linhas processadas: {fileImportResult.total}
+                    {fileImportResult.invalid > 0 &&
+                      ` • Linhas inválidas (sem e-mail): ${fileImportResult.invalid}`}
+                  </p>
+                </div>
+              )}
+            </div>
           </Card>
 
           {/* Imported Contacts Table */}
@@ -614,6 +753,87 @@ export default function AdminDashboard() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 5: EMAILS */}
+        <TabsContent value="emails" className="space-y-4">
+          <Card className="shadow-sm border-border">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-violet-600" />
+                    Templates de E-mail
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Edite o assunto e o corpo dos e-mails transacionais. Use as variáveis{' '}
+                    <code>[cidade]</code>, <code>[tipo]</code>, <code>[quartos]</code>,{' '}
+                    <code>[valor]</code> e <code>[link-demanda]</code>.
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={loadTemplates} className="h-8 text-xs">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-4">
+              {templatesLoading && (
+                <p className="text-xs text-muted-foreground py-4">Carregando templates...</p>
+              )}
+              {!templatesLoading && templates.length === 0 && (
+                <p className="text-xs text-muted-foreground py-4">
+                  Nenhum template encontrado. A migração 0012 deve criar os templates "broker_match"
+                  e "general_imported".
+                </p>
+              )}
+              {templates.map((tpl) => (
+                <div key={tpl.id} className="rounded-lg border p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="outline" className="text-[10px] font-mono uppercase">
+                      {tpl.slug}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSaveTemplate(tpl)}
+                      disabled={savingTemplateId === tpl.id}
+                      className="h-7 text-[11px] font-semibold"
+                    >
+                      {savingTemplateId === tpl.id ? 'Salvando...' : 'Salvar'}
+                    </Button>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">Assunto</label>
+                    <Input
+                      value={tpl.subject}
+                      onChange={(e) =>
+                        setTemplates((prev) =>
+                          prev.map((t) =>
+                            t.id === tpl.id ? { ...t, subject: e.target.value } : t,
+                          ),
+                        )
+                      }
+                      className="text-xs h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">Corpo (HTML)</label>
+                    <Textarea
+                      rows={8}
+                      value={tpl.body_html}
+                      onChange={(e) =>
+                        setTemplates((prev) =>
+                          prev.map((t) =>
+                            t.id === tpl.id ? { ...t, body_html: e.target.value } : t,
+                          ),
+                        )
+                      }
+                      className="text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>

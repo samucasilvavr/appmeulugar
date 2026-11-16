@@ -28,17 +28,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { BRAZILIAN_STATES, getCitiesForState } from '@/lib/locations'
 import {
   adminCreateUser,
+  adminDeleteUser,
+  adminSetUserBlocked,
   adminUpdateUser,
   getAllUsers,
   type AdminManagedProfile,
   type AdminUserRecord,
 } from '@/services/admin'
-import { ShieldCheck, UserCog, UserPlus, RefreshCw, Search } from 'lucide-react'
+import {
+  ShieldCheck,
+  UserCog,
+  UserPlus,
+  RefreshCw,
+  Search,
+  Ban,
+  CheckCircle2,
+  Trash2,
+} from 'lucide-react'
 
 const PROFILE_LABELS: Record<AdminManagedProfile, string> = {
   interessado: 'Interessado',
@@ -111,6 +123,8 @@ function profileBadgeClass(profile: AdminManagedProfile): string {
 }
 
 export default function UsersAdminPanel() {
+  const { user: currentUser } = useAuth()
+  const currentUserId = currentUser?.id || ''
   const { toast } = useToast()
   const [users, setUsers] = useState<AdminUserRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -126,6 +140,13 @@ export default function UsersAdminPanel() {
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false)
   const [createForm, setCreateForm] = useState<UserFormState>(emptyForm())
+
+  // Block / delete dialogs
+  const [blockTarget, setBlockTarget] = useState<AdminUserRecord | null>(null)
+  const [blockBusy, setBlockBusy] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<AdminUserRecord | null>(null)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -247,6 +268,61 @@ export default function UsersAdminPanel() {
       })
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleToggleBlock = async () => {
+    if (!blockTarget) return
+    setBlockBusy(true)
+    try {
+      const updated = await adminSetUserBlocked(blockTarget.id, !blockTarget.blocked)
+      setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
+      toast({
+        title: updated.blocked ? 'Usuário bloqueado' : 'Usuário desbloqueado',
+        description: updated.blocked
+          ? `${updated.name} não pode mais entrar ou usar a plataforma.`
+          : `${updated.name} voltou a ter acesso à plataforma.`,
+      })
+      setBlockTarget(null)
+    } catch (err) {
+      toast({
+        title: 'Erro ao atualizar bloqueio',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setBlockBusy(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleteBusy(true)
+    try {
+      const result = await adminDeleteUser(deleteTarget.id)
+      setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id))
+      const removed = result.removed || {}
+      const parts: string[] = []
+      if (removed.interests) parts.push(`${removed.interests} interesse(s)`)
+      if (removed.properties) parts.push(`${removed.properties} imóvel(is)`)
+      if (removed.presentations) parts.push(`${removed.presentations} apresentação(ões)`)
+      if (removed.chats) parts.push(`${removed.chats} conversa(s)`)
+      toast({
+        title: 'Usuário excluído',
+        description:
+          `${deleteTarget.name} foi removido definitivamente.` +
+          (parts.length ? ` Registros vinculados removidos: ${parts.join(', ')}.` : ''),
+      })
+      setDeleteTarget(null)
+      setDeleteConfirmText('')
+    } catch (err) {
+      toast({
+        title: 'Erro ao excluir usuário',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
@@ -546,6 +622,14 @@ export default function UsersAdminPanel() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
+                      {u.blocked && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] uppercase font-bold w-fit bg-zinc-800 text-white"
+                        >
+                          bloqueado
+                        </Badge>
+                      )}
                       <Badge
                         variant="secondary"
                         className={`text-[10px] uppercase font-bold w-fit ${
@@ -571,14 +655,53 @@ export default function UsersAdminPanel() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openEdit(u)}
-                      className="h-7 text-[11px]"
-                    >
-                      Editar
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEdit(u)}
+                        className="h-7 text-[11px]"
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setBlockTarget(u)}
+                        disabled={u.profile === 'admin' && u.id === currentUserId}
+                        title={
+                          u.blocked
+                            ? 'Desbloquear acesso do usuário'
+                            : 'Impedir o acesso (login/uso) deste usuário'
+                        }
+                        className="h-7 text-[11px] w-fit px-2"
+                      >
+                        {u.blocked ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                            Desbloquear
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="h-3.5 w-3.5 text-amber-600" />
+                            Bloquear
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setDeleteTarget(u)
+                          setDeleteConfirmText('')
+                        }}
+                        title="Excluir usuário definitivamente"
+                        className="h-7 text-[11px] w-fit px-2 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Excluir
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -612,6 +735,103 @@ export default function UsersAdminPanel() {
             </Button>
             <Button size="sm" onClick={handleSaveEdit} disabled={saving} className="font-semibold">
               {saving ? 'Salvando...' : 'Salvar alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Block/unblock confirm dialog */}
+      <Dialog open={!!blockTarget} onOpenChange={(o) => !o && setBlockTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              {blockTarget?.blocked ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Desbloquear usuário
+                </>
+              ) : (
+                <>
+                  <Ban className="h-4 w-4 text-amber-600" />
+                  Bloquear usuário
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {blockTarget?.blocked
+                ? `${blockTarget?.name} voltará a poder entrar e usar a plataforma normalmente.`
+                : `${blockTarget?.name} ficará impedido de entrar (login) e de usar a plataforma. O bloqueio é reversível e os dados do usuário são mantidos.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBlockTarget(null)}
+              disabled={blockBusy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleToggleBlock}
+              disabled={blockBusy}
+              className={
+                blockTarget?.blocked
+                  ? 'bg-emerald-600 hover:bg-emerald-700 font-semibold'
+                  : 'bg-amber-600 hover:bg-amber-700 font-semibold'
+              }
+            >
+              {blockBusy
+                ? 'Aplicando...'
+                : blockTarget?.blocked
+                  ? 'Desbloquear'
+                  : 'Bloquear usuário'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2 text-red-700">
+              <Trash2 className="h-4 w-4" />
+              Excluir usuário definitivamente
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Esta ação é PERMANENTE: {deleteTarget?.name} ({deleteTarget?.email}) e os registros
+              vinculados (interesses, imóveis, apresentações, conversas) serão removidos. Para
+              confirmar, digite EXCLUIR no campo abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="Digite EXCLUIR para confirmar"
+            className="h-9 text-xs"
+          />
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDeleteTarget(null)
+                setDeleteConfirmText('')
+              }}
+              disabled={deleteBusy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteBusy || deleteConfirmText.trim().toUpperCase() !== 'EXCLUIR'}
+              className="font-semibold"
+            >
+              {deleteBusy ? 'Excluindo...' : 'Excluir definitivamente'}
             </Button>
           </DialogFooter>
         </DialogContent>

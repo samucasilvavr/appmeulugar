@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T19:07:54.112Z",
+  "generatedAt": "2026-11-16T19:29:36.633Z",
   "collections": [
     {
       "name": "users",
@@ -96,6 +96,12 @@
         },
         {
           "name": "optout_notifications",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "blocked",
           "type": "bool",
           "required": false,
           "system": false
