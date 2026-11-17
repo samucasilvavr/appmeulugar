@@ -26,8 +26,9 @@ import {
   importContactsFile,
 } from '@/services/admin'
 import type { EmailTemplateRecord } from '@/types/database'
-import { Mail } from 'lucide-react'
+import { Mail, DatabaseBackup } from 'lucide-react'
 import UsersAdminPanel from '@/components/admin/UsersAdminPanel'
+import BackupPanel from '@/components/admin/BackupPanel'
 import { getProperties, updateProperty } from '@/services/properties'
 import { getInterests, updateInterest } from '@/services/interests'
 import type {
@@ -399,6 +400,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="usuarios" className="text-xs font-semibold gap-1.5">
             <Users className="h-4 w-4 text-blue-600" />
             Gestão de Usuários
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="text-xs font-semibold gap-1.5">
+            <DatabaseBackup className="h-4 w-4 text-rose-600" />
+            Backup
           </TabsTrigger>
         </TabsList>
 
@@ -838,9 +843,14 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
 
-        {/* TAB 5: USER MANAGEMENT */}
+        {/* TAB 6: USER MANAGEMENT */}
         <TabsContent value="usuarios" className="space-y-4">
           <UsersAdminPanel />
+        </TabsContent>
+
+        {/* TAB 7: BACKUP */}
+        <TabsContent value="backup" className="space-y-4">
+          <BackupPanel />
         </TabsContent>
       </Tabs>
     </div>
