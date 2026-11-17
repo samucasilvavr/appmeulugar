@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -11,218 +9,126 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Loader2, ShieldCheck, BadgeCheck, XCircle } from 'lucide-react'
-import { Header } from '@/components/Header'
-import { Footer } from '@/components/Footer'
 import { BRAZILIAN_STATES } from '@/lib/locations'
-import { consultarCreci, type CreciConsultaResponse } from '@/services/creci'
+import { ExternalLink, ShieldCheck, Info, MapPin } from 'lucide-react'
 
-// Estados em que a consulta automática está indisponível.
-const UNAVAILABLE_STATES = ['MG', 'TO']
-
-const UNAVAILABLE_MSG =
-  'Consulta automática indisponível para este estado. Verifique diretamente no site oficial do CRECI regional.'
-const INSTABILITY_MSG = 'Sistema do CRECI instável no momento, tente novamente em instantes.'
+// URL oficial de consulta pública de corretores de cada CRECI regional.
+// Para regiões sem portal de consulta próprio, aponta para o portal nacional
+// (COFECI / conselho.net.br) ou para a página de consulta do CRECI-SP
+// (hospedeiro da consulta em nome de várias regiões).
+const UF_CONSULTA_URLS: Record<string, { url: string; fonte: string }> = {
+  AC: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
+  AL: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
+  AM: { url: 'https://creciam.conselho.net.br', fonte: 'CRECI 8ª Região (AM)' },
+  AP: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
+  BA: { url: 'https://creciba.conselho.net.br', fonte: 'CRECI 5ª Região (BA)' },
+  CE: { url: 'https://crecice.conselho.net.br', fonte: 'CRECI 7ª Região (CE)' },
+  DF: { url: 'https://crecidf.conselho.net.br', fonte: 'CRECI 17ª Região (DF)' },
+  ES: { url: 'https://crecies.conselho.net.br', fonte: 'CRECI 12ª Região (ES)' },
+  GO: { url: 'https://crecigo.conselho.net.br', fonte: 'CRECI 19ª Região (GO)' },
+  MA: { url: 'https://crecima.conselho.net.br', fonte: 'CRECI 9ª Região (MA)' },
+  MG: { url: 'https://www.crecimgead.com.br', fonte: 'CRECI-MG (6ª Região)' },
+  MS: { url: 'https://crecims.conselho.net.br', fonte: 'CRECI 20ª Região (MS)' },
+  MT: { url: 'https://crecimt.conselho.net.br', fonte: 'CRECI 22ª Região (MT)' },
+  PA: { url: 'https://crecipa.conselho.net.br', fonte: 'CRECI 16ª Região (PA)' },
+  PB: { url: 'https://crecipb.conselho.net.br', fonte: 'CRECI 13ª Região (PB)' },
+  PE: { url: 'https://crecipe.conselho.net.br', fonte: 'CRECI 10ª Região (PE)' },
+  PI: { url: 'https://crecipi.conselho.net.br', fonte: 'CRECI 18ª Região (PI)' },
+  PR: { url: 'https://www.crecipr.com.br', fonte: 'CRECI-PR (11ª Região)' },
+  RJ: { url: 'https://crecirj.conselho.net.br', fonte: 'CRECI 4ª Região (RJ)' },
+  RN: { url: 'https://crecirn.conselho.net.br', fonte: 'CRECI 14ª Região (RN)' },
+  RO: { url: 'https://creciro.conselho.net.br', fonte: 'CRECI 23ª Região (RO)' },
+  RR: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
+  RS: { url: 'https://crecirs.com.br', fonte: 'CRECI-RS (3ª Região)' },
+  SC: { url: 'https://crecisc.conselho.net.br', fonte: 'CRECI 15ª Região (SC)' },
+  SE: { url: 'https://crecise.conselho.net.br', fonte: 'CRECI 21ª Região (SE)' },
+  SP: { url: 'https://www.crecisp.gov.br', fonte: 'CRECI-SP (2ª Região)' },
+  TO: { url: 'https://crecito.conselho.net.br', fonte: 'CRECI 24ª Região (TO)' },
+}
 
 export default function ConsultarCorretorPage() {
   const [uf, setUf] = useState('')
-  const [creci, setCreci] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [unavailable, setUnavailable] = useState(false)
-  const [error, setError] = useState('')
-  const [result, setResult] = useState<CreciConsultaResponse['resultado'] | null>(null)
-
-  function handleUfChange(value: string) {
-    setUf(value)
-    setUnavailable(UNAVAILABLE_STATES.includes(value))
-    setError('')
-  }
-
-  async function handleConsultar() {
-    setError('')
-    setResult(null)
-    if (!uf) {
-      setError('Selecione o estado (UF) do CRECI.')
-      return
-    }
-    if (UNAVAILABLE_STATES.includes(uf)) {
-      setUnavailable(true)
-      return
-    }
-    if (!creci.trim()) {
-      setError('Digite o número do CRECI.')
-      return
-    }
-    setLoading(true)
-    try {
-      const res = await consultarCreci(uf, creci.trim())
-      if (res.ok && res.resultado) {
-        setResult(res.resultado)
-      } else if (res.instavel) {
-        setError(INSTABILITY_MSG)
-      } else {
-        setError(res.motivo || INSTABILITY_MSG)
-      }
-    } catch {
-      setError(INSTABILITY_MSG)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const ativo = result ? result.situacao.toLowerCase() === 'ativo' : false
+  const destino = useMemo(() => (uf ? UF_CONSULTA_URLS[uf] : undefined), [uf])
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header />
-      <main className="flex-1">
-        <div className="mx-auto max-w-xl px-4 py-12 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Consultar Corretor</h1>
-            <p className="text-sm text-muted-foreground">
-              Verifique se o CRECI de um corretor está ativo na base oficial do CRECI — direto do
-              AppMeuLugar, sem sair da plataforma.
-            </p>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                Consulta à base do CRECI
-              </CardTitle>
-              <CardDescription>
-                A consulta é feita no servidor do AppMeuLugar e pode levar alguns segundos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-[130px_1fr]">
-                <div className="space-y-2">
-                  <Label htmlFor="creci-uf">Estado (UF)</Label>
-                  <Select value={uf} onValueChange={handleUfChange}>
-                    <SelectTrigger id="creci-uf">
-                      <SelectValue placeholder="UF" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BRAZILIAN_STATES.map((s) => (
-                        <SelectItem key={s.uf} value={s.uf}>
-                          {s.name} ({s.uf})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="creci-numero">Número do CRECI</Label>
-                  <Input
-                    id="creci-numero"
-                    value={creci}
-                    onChange={(ev) => setCreci(ev.target.value)}
-                    placeholder="Ex.: 123456-F"
-                    onKeyDown={(ev) => {
-                      if (ev.key === 'Enter') handleConsultar()
-                    }}
-                  />
-                </div>
-              </div>
-
-              {unavailable && (
-                <p className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
-                  {UNAVAILABLE_MSG}
-                </p>
-              )}
-              {error && (
-                <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-                  {error}
-                </p>
-              )}
-
-              <Button onClick={handleConsultar} disabled={loading || !uf || unavailable}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Consultando base do CRECI...
-                  </>
-                ) : (
-                  'Consultar'
-                )}
-              </Button>
-              <p className="text-[11px] text-muted-foreground">
-                Estados sem consulta automática: {UNAVAILABLE_STATES.join(' e ')} — verifique no
-                site oficial do CRECI regional.
-              </p>
-            </CardContent>
-          </Card>
-
-          {loading && (
-            <Card>
-              <CardContent className="flex items-center gap-3 py-6 justify-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Consultando base do CRECI...
-              </CardContent>
-            </Card>
-          )}
-
-          {result && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  {ativo ? (
-                    <BadgeCheck className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-red-600" />
-                  )}
-                  Resultado da consulta
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Nome Completo
-                    </p>
-                    <p className="font-medium">{result.nomeCompleto || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">CRECI</p>
-                    <p className="font-medium">{result.creciCompleto || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Situação
-                    </p>
-                    <Badge
-                      className={
-                        ativo ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
-                      }
-                    >
-                      {result.situacao || 'Desconhecida'}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Cidade</p>
-                    <p className="font-medium">{result.cidade || '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Estado</p>
-                    <p className="font-medium">{result.estado || '—'}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <p className="text-center text-xs text-muted-foreground">
-            É corretor?{' '}
-            <Link to="/cadastro" className="underline hover:text-foreground">
-              Crie sua conta no AppMeuLugar
-            </Link>{' '}
-            e publique seu portfólio de imóveis.
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Consultar Corretor</h1>
+          <p className="text-sm text-muted-foreground">
+            Consulte o registro de um corretor de imóveis no CRECI do seu estado, direto no site
+            oficial do conselho regional.
           </p>
         </div>
-      </main>
-      <Footer />
+
+        <Card className="shadow-md border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Consulta oficial no CRECI
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Escolha o estado do registro do corretor e você será levado ao site oficial de
+              consulta do CRECI respectivo, em uma nova aba.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Estado do registro (UF)</label>
+              <Select value={uf} onValueChange={setUf}>
+                <SelectTrigger className="text-xs h-10 w-full">
+                  <SelectValue placeholder="Selecione o estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BRAZILIAN_STATES.map((s) => (
+                    <SelectItem key={s.uf} value={s.uf} className="text-xs">
+                      {s.name} ({s.uf})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {destino && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  {destino.fonte}
+                </p>
+                <p className="text-[11px] text-muted-foreground break-all">{destino.url}</p>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              className="w-full h-10 font-semibold text-xs"
+              disabled={!uf}
+              onClick={() => {
+                if (destino) window.open(destino.url, '_blank', 'noopener,noreferrer')
+              }}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Consultar no site oficial
+            </Button>
+
+            <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+              <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <span>
+                A consulta é feita no site oficial do conselho — o AppMeuLugar não armazena nem
+                intermedia esses dados. Nos estados sem portal de consulta próprio, o link abre o
+                portal nacional do COFECI.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-xs text-muted-foreground">
+          É corretor e quer receber clientes?{' '}
+          <Link to="/cadastro" className="font-semibold text-primary hover:underline">
+            Cadastre-se gratuitamente
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,7 @@ interface SignUpData {
   real_estate?: string
   regions?: string
   creci_status?: 'aprovado' | 'pendente'
+  creci_photo?: File | null
 }
 
 interface AuthContextType {
@@ -75,10 +76,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (data: SignUpData) => {
     try {
-      const created = await pb.collection('users').create<UserRecord>({
-        ...data,
-        creci_status: data.profile === 'corretor' ? (data.creci_status ?? 'pendente') : undefined,
-      })
+      // A foto da carteirinha vai como campo de arquivo (multipart) do próprio
+      // registro; 'creci_review' é marcado no hook de cadastro quando a foto
+      // vem anexada (conferência posterior pelo admin).
+      const payload: Record<string, any> = { ...data }
+      delete payload.creciPhoto
+      if (data.profile === 'corretor') {
+        payload.creci_status = data.creci_status ?? 'pendente'
+        if (data.creciPhoto) {
+          payload.creci_photo = data.creciPhoto
+        }
+      } else {
+        delete payload.creci_status
+      }
+      await pb.collection('users').create<UserRecord>(payload)
 
       // Best-effort email verification request
       try {

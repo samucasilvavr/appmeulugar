@@ -13,20 +13,20 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { BRAZILIAN_STATES, getCitiesForState } from '@/lib/locations'
-
-// Estados em que a consulta automática ao CRECI não está disponível.
-const UNAVAILABLE_STATES = ['MG', 'TO']
 import type { UserProfile } from '@/types/database'
-import { consultarCreci } from '@/services/creci'
 import {
+  ImageUp,
   UserCheck,
   HeartHandshake,
   Building2,
   ShieldAlert,
-  BadgeCheck,
-  Loader2,
-  AlertTriangle,
+  Zap,
+  Clock3,
+  X,
 } from 'lucide-react'
+
+const MAX_PHOTO_MB = 5
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 export default function RegisterPage() {
   const { signUp } = useAuth()
@@ -48,29 +48,44 @@ export default function RegisterPage() {
   const [realEstate, setRealEstate] = useState('')
   const [regions, setRegions] = useState('')
 
+  // Foto da carteirinha CRECI (opcional): com a foto, acesso imediato;
+  // sem a foto, cadastro fica Pendente de Aprovação pela administração.
+  const [creciPhoto, setCreciPhoto] = useState<File | null>(null)
+  const [creciPhotoUrl, setCreciPhotoUrl] = useState<string | null>(null)
+
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Validação automática do CRECI (API BuscaCRECI, via backend):
-  // 'idle'       → ainda não validou
-  // 'indisponivel' → MG/TO (validação manual, status pendente)
-  // 'validando'  → consultando a base do CRECI
-  // 'aprovado'   → CRECI ativo: dados automáticos travados, cadastro liberado
-  // 'pendente'   → inativo/não encontrado → cadastro bloqueado
-  // 'instavel'   → API falhou/timeout → libera preenchimento manual, status pendente
-  const [validacao, setValidacao] = useState<
-    'idle' | 'indisponivel' | 'validando' | 'aprovado' | 'pendente' | 'instavel'
-  >('idle')
-  const [autoData, setAutoData] = useState<{ name: string; city: string; state: string } | null>(
-    null,
-  )
+  const temFoto = !!creciPhoto
 
-  const isValidando = validacao === 'validando'
-  const isAprovado = validacao === 'aprovado'
-  // Campos bloqueados quando preenchidos automaticamente pela consulta.
-  const dadosTravados = isAprovado && !!autoData
-  const isIndisponivel = validacao === 'indisponivel'
-  const isInstavel = validacao === 'instavel'
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] || null
+    if (!file) return
+    if (!PHOTO_TYPES.includes(file.type)) {
+      toast({
+        title: 'Formato não aceito',
+        description: 'A foto da carteirinha deve ser JPG, PNG ou WEBP.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+      toast({
+        title: 'Arquivo muito grande',
+        description: `A foto da carteirinha deve ter no máximo ${MAX_PHOTO_MB} MB.`,
+        variant: 'destructive',
+      })
+      return
+    }
+    setCreciPhoto(file)
+    setCreciPhotoUrl(URL.createObjectURL(file))
+  }
+
+  function handlePhotoRemove() {
+    if (creciPhotoUrl) URL.revokeObjectURL(creciPhotoUrl)
+    setCreciPhoto(null)
+    setCreciPhotoUrl(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,25 +118,13 @@ export default function RegisterPage() {
       return
     }
 
-    if (profile === 'corretor') {
-      if (!creci.trim()) {
-        toast({
-          title: 'CRECI obrigatório',
-          description: 'Corretores devem informar o número de registro no CRECI.',
-          variant: 'destructive',
-        })
-        return
-      }
-      // O envio só é liberado após validar o CRECI (ou cair no plano B manual).
-      if (!isAprovado && validacao !== 'instavel' && validacao !== 'indisponivel') {
-        toast({
-          title: 'Valide seu CRECI',
-          description:
-            'Clique em "Validar CRECI" antes de concluir o cadastro. Em MG e TO o preenchimento é manual.',
-          variant: 'destructive',
-        })
-        return
-      }
+    if (profile === 'corretor' && !creci.trim()) {
+      toast({
+        title: 'CRECI obrigatório',
+        description: 'Corretores devem informar o número de registro no CRECI.',
+        variant: 'destructive',
+      })
+      return
     }
 
     setLoading(true)
@@ -138,9 +141,10 @@ export default function RegisterPage() {
       creci_uf: profile === 'corretor' ? creciUf : undefined,
       real_estate: profile === 'corretor' ? realEstate : undefined,
       regions: profile === 'corretor' ? regions : undefined,
-      // CRECI Ativo (validado na base oficial) entra já aprovado; os demais
-      // casos (manual/instável) ficam Pendentes de Aprovação pelo admin.
-      creci_status: profile === 'corretor' ? (isAprovado ? 'aprovado' : 'pendente') : undefined,
+      // Com a foto da carteirinha: acesso imediato ('aprovado') + marcado para
+      // conferência posterior pelo admin. Sem a foto: Pendente de Aprovação.
+      creci_status: profile === 'corretor' ? (temFoto ? 'aprovado' : 'pendente') : undefined,
+      creciPhoto: profile === 'corretor' ? creciPhoto : null,
     })
     setLoading(false)
 
@@ -157,57 +161,16 @@ export default function RegisterPage() {
       title: 'Conta criada com sucesso!',
       description:
         profile === 'corretor'
-          ? 'Seu CRECI foi enviado para validação da administração.'
+          ? temFoto
+            ? 'Sua carteirinha CRECI foi enviada e seu acesso já está liberado (sujeito a conferência).'
+            : 'Seu cadastro ficou Pendente de Aprovação pela administração.'
           : 'Bem-vindo ao AppMeuLugar!',
     })
 
-    if (profile === 'corretor') {
-      navigate('/painel-corretor')
-    } else {
-      navigate('/painel-interessado')
-    }
+    navigate(profile === 'corretor' ? '/painel-corretor' : '/painel-interessado')
   }
 
   const cities = getCitiesForState(stateUf)
-
-  async function handleValidarCreci() {
-    setAutoData(null)
-    if (!creci.trim()) {
-      toast({
-        title: 'CRECI obrigatório',
-        description: 'Digite o número do CRECI antes de validar.',
-        variant: 'destructive',
-      })
-      return
-    }
-    if (UNAVAILABLE_STATES.includes(creciUf)) {
-      setValidacao('indisponivel')
-      return
-    }
-    setValidacao('validando')
-    try {
-      const res = await consultarCreci(creciUf, creci.trim())
-      if (res.ok && res.resultado) {
-        if (res.status === 'ativo') {
-          const novoNome = res.resultado.nomeCompleto || name
-          const novaUf = res.resultado.estado || creciUf
-          setAutoData({ name: novoNome, city: res.resultado.cidade || city, state: novaUf })
-          setName(novoNome)
-          setCity(res.resultado.cidade || city)
-          setStateUf(novaUf)
-          setValidacao('aprovado')
-        } else {
-          setValidacao('pendente')
-        }
-      } else if (res.instavel) {
-        setValidacao('instavel')
-      } else {
-        setValidacao('pendente')
-      }
-    } catch {
-      setValidacao('instavel')
-    }
-  }
 
   return (
     <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[calc(100vh-12rem)]">
@@ -270,8 +233,7 @@ export default function RegisterPage() {
                 placeholder="Seu nome"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                disabled={dadosTravados}
-                className="text-xs h-9 disabled:opacity-80 disabled:cursor-not-allowed"
+                className="text-xs h-9"
               />
             </div>
 
@@ -310,12 +272,8 @@ export default function RegisterPage() {
                     setStateUf(val)
                     setCity(getCitiesForState(val)[0] || '')
                   }}
-                  disabled={dadosTravados}
                 >
-                  <SelectTrigger
-                    className="text-xs h-9 disabled:opacity-80 disabled:cursor-not-allowed"
-                    disabled={dadosTravados}
-                  >
+                  <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -330,11 +288,8 @@ export default function RegisterPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">Cidade principal</label>
-                <Select value={city} onValueChange={setCity} disabled={dadosTravados}>
-                  <SelectTrigger
-                    className="text-xs h-9 disabled:opacity-80 disabled:cursor-not-allowed"
-                    disabled={dadosTravados}
-                  >
+                <Select value={city} onValueChange={setCity}>
+                  <SelectTrigger className="text-xs h-9">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -411,73 +366,76 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                {/* Validação automática via API BuscaCRECI (roda no backend) */}
-                <div className="space-y-2 pt-1">
-                  <Button
-                    type="button"
-                    onClick={handleValidarCreci}
-                    disabled={isValidando || UNAVAILABLE_STATES.includes(creciUf)}
-                    className="w-full h-9 text-xs font-semibold"
-                    variant={UNAVAILABLE_STATES.includes(creciUf) ? 'outline' : 'default'}
-                  >
-                    {isValidando ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Consultando base do CRECI...
-                      </>
-                    ) : (
-                      'Validar CRECI'
-                    )}
-                  </Button>
+                {/* Foto da carteirinha CRECI: define o tipo de acesso */}
+                <div className="space-y-2 pt-1 rounded-lg border bg-background p-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                    <ImageUp className="h-4 w-4 text-primary" />
+                    Foto da carteirinha CRECI (opcional)
+                  </div>
 
-                  {UNAVAILABLE_STATES.includes(creciUf) && (
-                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800">
-                      <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
-                      <span>
-                        Consulta automática indisponível para este estado. Preencha seus dados
-                        manualmente; o cadastro ficará como <strong>Pendente de Aprovação</strong>{' '}
-                        até a verificação pela administração.
-                      </span>
-                    </div>
-                  )}
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <strong>Com a foto da carteirinha:</strong> acesso imediato ao app — sua conta é
+                    criada já liberada (sujeita a conferência posterior pela equipe).
+                    <br />
+                    <strong>Sem a foto:</strong> aprovação manual pela equipe antes de entrar.
+                  </p>
 
-                  {isAprovado && (
-                    <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-[11px] text-emerald-800">
-                      <BadgeCheck className="h-4 w-4 shrink-0 mt-0.5" />
-                      <span>
-                        <strong>CRECI Ativo</strong> — dados preenchidos automaticamente a partir da
-                        base oficial. Cadastro liberado.
-                      </span>
+                  {temFoto && creciPhotoUrl ? (
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={creciPhotoUrl}
+                        alt="Pré-visualização da carteirinha CRECI"
+                        className="h-20 w-28 rounded-md border object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
+                          <Zap className="h-3.5 w-3.5" /> Acesso imediato: a carteirinha será
+                          conferida pela equipe depois.
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {creciPhoto.name} ({Math.round(creciPhoto.size / 1024)} KB)
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-6 mt-1 text-[10px]"
+                          onClick={handlePhotoRemove}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Remover foto
+                        </Button>
+                      </div>
                     </div>
-                  )}
-
-                  {validacao === 'pendente' && (
-                    <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-800">
-                      <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
-                      <span>
-                        CRECI <strong>inativo ou não localizado</strong> na base oficial. O cadastro
-                        não pode ser concluído com este número. Verifique os dados e tente
-                        novamente.
-                      </span>
-                    </div>
-                  )}
-
-                  {validacao === 'instavel' && (
-                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800">
-                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                      <span>
-                        Sistema do CRECI instável no momento. Você pode preencher os dados
-                        manualmente — o cadastro ficará como <strong>Pendente de Aprovação</strong>.
-                      </span>
-                    </div>
+                  ) : (
+                    <>
+                      <label
+                        htmlFor="creci-photo-input"
+                        className="flex items-center justify-center gap-2 w-full h-16 rounded-md border border-dashed text-[11px] text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <ImageUp className="h-4 w-4" />
+                        Clique para anexar a foto (JPG, PNG ou WEBP, até {MAX_PHOTO_MB} MB)
+                      </label>
+                      <input
+                        id="creci-photo-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={handlePhotoChange}
+                      />
+                      <p className="flex items-center gap-1 text-[11px] text-amber-700">
+                        <Clock3 className="h-3.5 w-3.5" /> Sem a foto, seu cadastro fica{' '}
+                        <strong>Pendente de Aprovação</strong> pela equipe.
+                      </p>
+                    </>
                   )}
                 </div>
 
                 <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
                   <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                   <span>
-                    Seu CRECI será verificado pela administração antes da aprovação final para
-                    garantir segurança mútua.
+                    Sua carteirinha CRECI (se enviada) passa por conferência da administração para
+                    garantir segurança mútua. Informações falsas podem levar ao bloqueio da conta.
                   </span>
                 </div>
               </div>
@@ -539,11 +497,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={
-                loading ||
-                !acceptedTerms ||
-                (profile === 'corretor' && !isAprovado && !isInstavel && !isIndisponivel)
-              }
+              disabled={loading || !acceptedTerms}
               className="w-full h-10 font-semibold text-xs shadow-sm mt-2"
             >
               {loading ? 'Criando conta...' : 'Concluir cadastro'}

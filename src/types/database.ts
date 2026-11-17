@@ -6,6 +6,7 @@ export type Status = 'ativo' | 'pausado' | 'encerrado'
 export type PresentationStatus = 'pendente' | 'aceita' | 'recusada' | 'expirada'
 
 export interface UserRecord {
+  creci_photo?: string
   id: string
   email: string
   name: string

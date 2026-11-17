@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T12:50:14.997Z",
+  "generatedAt": "2026-11-17T15:33:46.862Z",
   "collections": [
     {
       "name": "users",
@@ -102,6 +102,18 @@
         },
         {
           "name": "blocked",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "creci_photo",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "creci_review",
           "type": "bool",
           "required": false,
           "system": false
