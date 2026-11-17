@@ -301,7 +301,7 @@ export default function UsersAdminPanel() {
     try {
       const result = await adminDeleteUser(deleteTarget.id)
       setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id))
-      const removed = result.removed || {}
+      const removed = result.removed
       const parts: string[] = []
       if (removed.interests) parts.push(`${removed.interests} interesse(s)`)
       if (removed.properties) parts.push(`${removed.properties} imóvel(is)`)

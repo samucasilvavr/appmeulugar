@@ -552,10 +552,10 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/import-contacts', (e) => {
   }
 
   return e.json(200, {
-    created: created,
-    skipped_invalid: skippedInvalid,
-    skipped_duplicate: skippedDuplicate,
+    imported: created,
+    duplicates: skippedDuplicate,
+    invalid: skippedInvalid,
     opted_out: optedOut,
-    total_lines: rows.length,
+    total: rows.length,
   })
 })

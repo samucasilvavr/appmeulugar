@@ -124,14 +124,28 @@ export interface AdminDeleteResult {
     presentations: number
     chats: number
     favorites: number
+    messages: number
   }
 }
 
 export async function adminDeleteUser(id: string): Promise<AdminDeleteResult> {
   try {
-    return await pb.send<AdminDeleteResult>(`/backend/v1/appmeulugar/admin/users/${id}`, {
-      method: 'DELETE',
-    })
+    const res = await pb.send<{
+      deleted: boolean
+      removed?: Partial<AdminDeleteResult['removed']>
+    }>(`/backend/v1/appmeulugar/admin/users/${id}`, { method: 'DELETE' })
+    return {
+      deleted: !!res.deleted,
+      removed: {
+        interests: 0,
+        properties: 0,
+        presentations: 0,
+        chats: 0,
+        favorites: 0,
+        messages: 0,
+        ...(res.removed || {}),
+      },
+    }
   } catch (err) {
     console.error('adminDeleteUser error:', err)
     throw new Error(getErrorMessage(err))

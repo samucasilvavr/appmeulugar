@@ -1,10 +1,11 @@
-import { pb } from '@/lib/pocketbase/client'
+import pb from '@/lib/pocketbase/client'
 
 export type OptOutStatus = {
   email: string
   found: boolean
   status: string
   type: string
+  updated?: boolean
 }
 
 export async function getOptOutStatus(email: string): Promise<OptOutStatus | null> {

@@ -52,7 +52,7 @@ routerAdd(
 
     // Favoritos primeiro (referenciam interests/properties), depois vínculos diretos.
     deleteAll('favorites', 'user_id = {:uid}', { uid: id }, 'favorites')
-    deleteAll('presentations', 'buyer_id = {:uid}', { uid: id }, 'presentations')
+    deleteAll('presentations', 'interest_owner_id = {:uid}', { uid: id }, 'presentations')
     deleteAll('presentations', 'broker_id = {:uid}', { uid: id }, 'presentations')
     deleteAll('messages', 'sender_id = {:uid}', { uid: id }, 'messages')
     deleteAll('chats', 'buyer_id = {:uid}', { uid: id }, 'chats')
