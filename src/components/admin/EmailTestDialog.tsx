@@ -17,12 +17,15 @@ interface EmailTestDialogProps {
   slug: string
 }
 
+// Endereço de conferência dos textos (pode ser trocado no diálogo).
+const DEFAULT_TEST_RECIPIENT = 'samuca.silva.vr@gmail.com'
+
 // Botão "Enviar e-mail de teste" ao lado de cada template. Envia o template salvo com
 // dados de exemplo para o endereço digitado; não salva nem altera nada.
 export function EmailTestDialog({ slug }: EmailTestDialogProps) {
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
-  const [to, setTo] = useState('')
+  const [to, setTo] = useState(DEFAULT_TEST_RECIPIENT)
   const [sending, setSending] = useState(false)
 
   const handleSend = async () => {
@@ -75,6 +78,7 @@ export function EmailTestDialog({ slug }: EmailTestDialogProps) {
             <Input
               type="email"
               placeholder="nome@exemplo.com"
+              aria-label="E-mail de destino do teste"
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="text-xs h-9"

@@ -28,6 +28,7 @@ type ContactForm = {
   city: string
   creci: string
   source: string
+  authorization_status: 'autorizado' | 'pendente' | 'descadastrado'
 }
 
 const FIELDS: { key: keyof ContactForm; label: string }[] = [
@@ -49,6 +50,7 @@ function toForm(contact: ImportedContactRecord): ContactForm {
     city: contact.city || '',
     creci: contact.creci || '',
     source: contact.source || '',
+    authorization_status: contact.authorization_status || 'pendente',
   }
 }
 
@@ -83,6 +85,7 @@ export function ContactEditDialog({ contact, onOpenChange, onSaved }: ContactEdi
         city: form.city.trim(),
         creci: form.creci.trim(),
         source: form.source.trim(),
+        authorization_status: form.authorization_status,
       })
       toast({ title: 'Contato atualizado' })
       onSaved()
@@ -104,8 +107,7 @@ export function ContactEditDialog({ contact, onOpenChange, onSaved }: ContactEdi
         <DialogHeader>
           <DialogTitle>Editar contato</DialogTitle>
           <DialogDescription className="text-xs">
-            Corrija os dados do contato importado. A autorização de envio é alterada pelo botão
-            Desativar/Reativar na tabela.
+            Corrija os dados do contato importado, inclusive a situação de autorização de envio.
           </DialogDescription>
         </DialogHeader>
         {form && (
@@ -123,6 +125,23 @@ export function ContactEditDialog({ contact, onOpenChange, onSaved }: ContactEdi
                 />
               </div>
             ))}
+            <div className="space-y-1.5 col-span-2">
+              <label className="text-xs font-medium text-foreground">Situação de autorização</label>
+              <select
+                value={form.authorization_status}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    authorization_status: e.target.value as ContactForm['authorization_status'],
+                  })
+                }
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="autorizado">Autorizado</option>
+                <option value="pendente">Pendente</option>
+                <option value="descadastrado">Descadastrado</option>
+              </select>
+            </div>
           </div>
         )}
         <DialogFooter>
