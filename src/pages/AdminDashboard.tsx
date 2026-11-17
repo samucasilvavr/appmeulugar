@@ -29,6 +29,8 @@ import type { EmailTemplateRecord } from '@/types/database'
 import { Mail, DatabaseBackup } from 'lucide-react'
 import UsersAdminPanel from '@/components/admin/UsersAdminPanel'
 import BackupPanel from '@/components/admin/BackupPanel'
+import { ContactEditDialog } from '@/components/admin/ContactEditDialog'
+import { EmailTestDialog } from '@/components/admin/EmailTestDialog'
 import { getProperties, updateProperty } from '@/services/properties'
 import { getInterests, updateInterest } from '@/services/interests'
 import type {
@@ -86,6 +88,34 @@ export default function AdminDashboard() {
   const [templates, setTemplates] = useState<EmailTemplateRecord[]>([])
   const [templatesLoading, setTemplatesLoading] = useState(false)
   const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null)
+
+  // Contatos importados: edição total e alternância de autorização
+  const [editingContact, setEditingContact] = useState<ImportedContactRecord | null>(null)
+  const [togglingContactId, setTogglingContactId] = useState<string | null>(null)
+
+  const handleToggleContact = async (contact: ImportedContactRecord) => {
+    const next = contact.authorization_status === 'autorizado' ? 'pendente' : 'autorizado'
+    setTogglingContactId(contact.id)
+    try {
+      const updated = await updateContactStatus(contact.id, next)
+      setContacts((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      toast({
+        title: next === 'autorizado' ? 'Contato reativado' : 'Contato desativado',
+        description:
+          next === 'autorizado'
+            ? 'O contato volta a receber e-mails gerais.'
+            : 'O contato deixou de receber e-mails gerais.',
+      })
+    } catch (err) {
+      toast({
+        title: 'Erro ao alterar autorização',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setTogglingContactId(null)
+    }
+  }
 
   const loadTemplates = async () => {
     setTemplatesLoading(true)
@@ -667,6 +697,7 @@ export default function AdminDashboard() {
                     <TableHead>Local / CRECI</TableHead>
                     <TableHead>Origem</TableHead>
                     <TableHead>Autorização</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-xs">
@@ -690,12 +721,44 @@ export default function AdminDashboard() {
                           {c.authorization_status}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right whitespace-nowrap space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingContact(c)}
+                          className="h-7 text-[11px] font-semibold"
+                        >
+                          Editar
+                        </Button>
+                        {c.authorization_status !== 'descadastrado' && (
+                          <Button
+                            variant={
+                              c.authorization_status === 'autorizado' ? 'outline' : 'default'
+                            }
+                            size="sm"
+                            disabled={togglingContactId === c.id}
+                            onClick={() => handleToggleContact(c)}
+                            className="h-7 text-[11px] font-semibold"
+                          >
+                            {c.authorization_status === 'autorizado' ? 'Desativar' : 'Reativar'}
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+          <ContactEditDialog
+            contact={editingContact}
+            onOpenChange={(open) => {
+              if (!open) setEditingContact(null)
+            }}
+            onSaved={() => {
+              getImportedContacts().then(setContacts)
+            }}
+          />
         </TabsContent>
 
         {/* TAB 4: NOTIFICATION LOGS */}
@@ -799,14 +862,17 @@ export default function AdminDashboard() {
                     <Badge variant="outline" className="text-[10px] font-mono uppercase">
                       {tpl.slug}
                     </Badge>
-                    <Button
-                      size="sm"
-                      onClick={() => handleSaveTemplate(tpl)}
-                      disabled={savingTemplateId === tpl.id}
-                      className="h-7 text-[11px] font-semibold"
-                    >
-                      {savingTemplateId === tpl.id ? 'Salvando...' : 'Salvar'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <EmailTestDialog slug={tpl.slug} />
+                      <Button
+                        size="sm"
+                        onClick={() => handleSaveTemplate(tpl)}
+                        disabled={savingTemplateId === tpl.id}
+                        className="h-7 text-[11px] font-semibold"
+                      >
+                        {savingTemplateId === tpl.id ? 'Salvando...' : 'Salvar'}
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-foreground">Assunto</label>

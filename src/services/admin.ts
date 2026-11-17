@@ -236,6 +236,32 @@ export async function updateContactStatus(
   })
 }
 
+// Edição total de um contato importado (nome, e-mail, telefone, estado, cidade, CRECI, origem).
+export async function updateImportedContact(
+  id: string,
+  data: Partial<ImportedContactRecord>,
+): Promise<ImportedContactRecord> {
+  try {
+    return await pb.collection('imported_contacts').update<ImportedContactRecord>(id, data)
+  } catch (err) {
+    console.error('updateImportedContact error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
+// Envia um e-mail de TESTE do template (somente leitura no backend; nada é salvo).
+export async function sendEmailTest(slug: string, to: string): Promise<void> {
+  try {
+    await pb.send('/backend/v1/appmeulugar/admin/email-test', {
+      method: 'POST',
+      body: { slug, to },
+    })
+  } catch (err) {
+    console.error('sendEmailTest error:', err)
+    throw new Error(getErrorMessage(err))
+  }
+}
+
 export async function deleteImportedContact(id: string): Promise<boolean> {
   return await pb.collection('imported_contacts').delete(id)
 }
