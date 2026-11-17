@@ -60,6 +60,12 @@ export function Header() {
           >
             Imóveis
           </Link>
+          <Link
+            to="/consultar-corretor"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Consultar Corretor
+          </Link>
         </nav>
 
         {/* Action Buttons & Auth */}

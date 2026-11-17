@@ -15,6 +15,7 @@ interface SignUpData {
   creci_uf?: string
   real_estate?: string
   regions?: string
+  creci_status?: 'aprovado' | 'pendente'
 }
 
 interface AuthContextType {
@@ -76,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const created = await pb.collection('users').create<UserRecord>({
         ...data,
-        creci_status: data.profile === 'corretor' ? 'pendente' : undefined,
+        creci_status: data.profile === 'corretor' ? (data.creci_status ?? 'pendente') : undefined,
       })
 
       // Best-effort email verification request

@@ -13,8 +13,20 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { BRAZILIAN_STATES, getCitiesForState } from '@/lib/locations'
+
+// Estados em que a consulta automática ao CRECI não está disponível.
+const UNAVAILABLE_STATES = ['MG', 'TO']
 import type { UserProfile } from '@/types/database'
-import { UserCheck, HeartHandshake, Building2, ShieldAlert } from 'lucide-react'
+import { consultarCreci } from '@/services/creci'
+import {
+  UserCheck,
+  HeartHandshake,
+  Building2,
+  ShieldAlert,
+  BadgeCheck,
+  Loader2,
+  AlertTriangle,
+} from 'lucide-react'
 
 export default function RegisterPage() {
   const { signUp } = useAuth()
@@ -38,6 +50,27 @@ export default function RegisterPage() {
 
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Validação automática do CRECI (API BuscaCRECI, via backend):
+  // 'idle'       → ainda não validou
+  // 'indisponivel' → MG/TO (validação manual, status pendente)
+  // 'validando'  → consultando a base do CRECI
+  // 'aprovado'   → CRECI ativo: dados automáticos travados, cadastro liberado
+  // 'pendente'   → inativo/não encontrado → cadastro bloqueado
+  // 'instavel'   → API falhou/timeout → libera preenchimento manual, status pendente
+  const [validacao, setValidacao] = useState<
+    'idle' | 'indisponivel' | 'validando' | 'aprovado' | 'pendente' | 'instavel'
+  >('idle')
+  const [autoData, setAutoData] = useState<{ name: string; city: string; state: string } | null>(
+    null,
+  )
+
+  const isValidando = validacao === 'validando'
+  const isAprovado = validacao === 'aprovado'
+  // Campos bloqueados quando preenchidos automaticamente pela consulta.
+  const dadosTravados = isAprovado && !!autoData
+  const isIndisponivel = validacao === 'indisponivel'
+  const isInstavel = validacao === 'instavel'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,13 +103,25 @@ export default function RegisterPage() {
       return
     }
 
-    if (profile === 'corretor' && !creci.trim()) {
-      toast({
-        title: 'CRECI obrigatório',
-        description: 'Corretores devem informar o número de registro no CRECI.',
-        variant: 'destructive',
-      })
-      return
+    if (profile === 'corretor') {
+      if (!creci.trim()) {
+        toast({
+          title: 'CRECI obrigatório',
+          description: 'Corretores devem informar o número de registro no CRECI.',
+          variant: 'destructive',
+        })
+        return
+      }
+      // O envio só é liberado após validar o CRECI (ou cair no plano B manual).
+      if (!isAprovado && validacao !== 'instavel' && validacao !== 'indisponivel') {
+        toast({
+          title: 'Valide seu CRECI',
+          description:
+            'Clique em "Validar CRECI" antes de concluir o cadastro. Em MG e TO o preenchimento é manual.',
+          variant: 'destructive',
+        })
+        return
+      }
     }
 
     setLoading(true)
@@ -93,6 +138,9 @@ export default function RegisterPage() {
       creci_uf: profile === 'corretor' ? creciUf : undefined,
       real_estate: profile === 'corretor' ? realEstate : undefined,
       regions: profile === 'corretor' ? regions : undefined,
+      // CRECI Ativo (validado na base oficial) entra já aprovado; os demais
+      // casos (manual/instável) ficam Pendentes de Aprovação pelo admin.
+      creci_status: profile === 'corretor' ? (isAprovado ? 'aprovado' : 'pendente') : undefined,
     })
     setLoading(false)
 
@@ -121,6 +169,45 @@ export default function RegisterPage() {
   }
 
   const cities = getCitiesForState(stateUf)
+
+  async function handleValidarCreci() {
+    setAutoData(null)
+    if (!creci.trim()) {
+      toast({
+        title: 'CRECI obrigatório',
+        description: 'Digite o número do CRECI antes de validar.',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (UNAVAILABLE_STATES.includes(creciUf)) {
+      setValidacao('indisponivel')
+      return
+    }
+    setValidacao('validando')
+    try {
+      const res = await consultarCreci(creciUf, creci.trim())
+      if (res.ok && res.resultado) {
+        if (res.status === 'ativo') {
+          const novoNome = res.resultado.nomeCompleto || name
+          const novaUf = res.resultado.estado || creciUf
+          setAutoData({ name: novoNome, city: res.resultado.cidade || city, state: novaUf })
+          setName(novoNome)
+          setCity(res.resultado.cidade || city)
+          setStateUf(novaUf)
+          setValidacao('aprovado')
+        } else {
+          setValidacao('pendente')
+        }
+      } else if (res.instavel) {
+        setValidacao('instavel')
+      } else {
+        setValidacao('pendente')
+      }
+    } catch {
+      setValidacao('instavel')
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[calc(100vh-12rem)]">
@@ -183,7 +270,8 @@ export default function RegisterPage() {
                 placeholder="Seu nome"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="text-xs h-9"
+                disabled={dadosTravados}
+                className="text-xs h-9 disabled:opacity-80 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -222,8 +310,12 @@ export default function RegisterPage() {
                     setStateUf(val)
                     setCity(getCitiesForState(val)[0] || '')
                   }}
+                  disabled={dadosTravados}
                 >
-                  <SelectTrigger className="text-xs h-9">
+                  <SelectTrigger
+                    className="text-xs h-9 disabled:opacity-80 disabled:cursor-not-allowed"
+                    disabled={dadosTravados}
+                  >
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,8 +330,11 @@ export default function RegisterPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">Cidade principal</label>
-                <Select value={city} onValueChange={setCity}>
-                  <SelectTrigger className="text-xs h-9">
+                <Select value={city} onValueChange={setCity} disabled={dadosTravados}>
+                  <SelectTrigger
+                    className="text-xs h-9 disabled:opacity-80 disabled:cursor-not-allowed"
+                    disabled={dadosTravados}
+                  >
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,7 +411,69 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                <div className="flex items-start gap-2 text-[11px] text-muted-foreground pt-1">
+                {/* Validação automática via API BuscaCRECI (roda no backend) */}
+                <div className="space-y-2 pt-1">
+                  <Button
+                    type="button"
+                    onClick={handleValidarCreci}
+                    disabled={isValidando || UNAVAILABLE_STATES.includes(creciUf)}
+                    className="w-full h-9 text-xs font-semibold"
+                    variant={UNAVAILABLE_STATES.includes(creciUf) ? 'outline' : 'default'}
+                  >
+                    {isValidando ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Consultando base do CRECI...
+                      </>
+                    ) : (
+                      'Validar CRECI'
+                    )}
+                  </Button>
+
+                  {UNAVAILABLE_STATES.includes(creciUf) && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800">
+                      <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>
+                        Consulta automática indisponível para este estado. Preencha seus dados
+                        manualmente; o cadastro ficará como <strong>Pendente de Aprovação</strong>{' '}
+                        até a verificação pela administração.
+                      </span>
+                    </div>
+                  )}
+
+                  {isAprovado && (
+                    <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-[11px] text-emerald-800">
+                      <BadgeCheck className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>CRECI Ativo</strong> — dados preenchidos automaticamente a partir da
+                        base oficial. Cadastro liberado.
+                      </span>
+                    </div>
+                  )}
+
+                  {validacao === 'pendente' && (
+                    <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-800">
+                      <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>
+                        CRECI <strong>inativo ou não localizado</strong> na base oficial. O cadastro
+                        não pode ser concluído com este número. Verifique os dados e tente
+                        novamente.
+                      </span>
+                    </div>
+                  )}
+
+                  {validacao === 'instavel' && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                      <span>
+                        Sistema do CRECI instável no momento. Você pode preencher os dados
+                        manualmente — o cadastro ficará como <strong>Pendente de Aprovação</strong>.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
                   <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                   <span>
                     Seu CRECI será verificado pela administração antes da aprovação final para
@@ -382,7 +539,11 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={loading || !acceptedTerms}
+              disabled={
+                loading ||
+                !acceptedTerms ||
+                (profile === 'corretor' && !isAprovado && !isInstavel && !isIndisponivel)
+              }
               className="w-full h-10 font-semibold text-xs shadow-sm mt-2"
             >
               {loading ? 'Criando conta...' : 'Concluir cadastro'}

@@ -103,6 +103,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/consultar-corretor" className="hover:text-foreground transition-colors">
+                  Consultar Corretor (CRECI)
+                </Link>
+              </li>
+              <li>
                 <Link to="/descadastrar" className="hover:text-foreground transition-colors">
                   Descadastrar de e-mails
                 </Link>

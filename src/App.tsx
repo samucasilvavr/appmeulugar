@@ -25,6 +25,7 @@ import ProfilePage from './pages/Profile'
 import PrivacyPage from './pages/Privacy'
 import TermsPage from './pages/Terms'
 import OptOutPage from './pages/OptOut'
+import ConsultarCorretorPage from './pages/ConsultarCorretor'
 
 const App = () => (
   <BrowserRouter>
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/privacidade" element={<PrivacyPage />} />
             <Route path="/termos" element={<TermsPage />} />
             <Route path="/descadastrar" element={<OptOutPage />} />
+            <Route path="/consultar-corretor" element={<ConsultarCorretorPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
