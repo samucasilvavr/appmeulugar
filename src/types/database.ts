@@ -20,6 +20,7 @@ export interface UserRecord {
   real_estate?: string
   regions?: string
   creci_status?: CreciStatus
+  creci_review?: boolean
   blocked?: boolean
   created: string
   updated: string

@@ -26,6 +26,8 @@ export interface AdminUserRecord {
   real_estate: string
   regions: string
   creci_status: '' | 'pendente' | 'aprovado' | 'rejeitado'
+  creci_review: boolean
+  creci_photo: string
   blocked: boolean
   verified: boolean
   created: string
@@ -44,6 +46,7 @@ export interface AdminUserUpdatePayload {
   regions?: string
   profile?: AdminManagedProfile
   creci_status?: '' | 'pendente' | 'aprovado' | 'rejeitado'
+  creci_review?: boolean
   verified?: boolean
   password?: string
 }

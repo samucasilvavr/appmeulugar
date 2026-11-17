@@ -16,7 +16,7 @@ interface SignUpData {
   real_estate?: string
   regions?: string
   creci_status?: 'aprovado' | 'pendente'
-  creci_photo?: File | null
+  creciPhoto?: File | null
 }
 
 interface AuthContextType {

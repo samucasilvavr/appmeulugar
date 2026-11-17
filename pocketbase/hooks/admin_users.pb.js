@@ -15,6 +15,10 @@
 //   PATCH /backend/v1/appmeulugar/admin/users/{id}/block  body {blocked:true|false}
 //         — bloqueia (impede login/uso) ou desbloqueia o usuário
 //
+// A listagem e a edição expõem também creci_photo (nome do arquivo da foto da
+// carteirinha CRECI) e creci_review (conferência posterior pendente): o admin
+// vê a foto e aprova a conferência com PATCH { creci_review: false }.
+//
 // A exclusão definitiva (DELETE /backend/v1/appmeulugar/admin/users/{id}, com
 // limpeza de interesses/imóveis/apresentações/chats/favoritos) vive em
 // delete_user.pb.js.
@@ -51,6 +55,8 @@ routerAdd(
         real_estate: u.getString('real_estate'),
         regions: u.getString('regions'),
         creci_status: u.getString('creci_status'),
+        creci_review: u.getBool('creci_review'),
+        creci_photo: u.getString('creci_photo'),
         blocked: u.getBool('blocked'),
         verified: u.getBool('verified'),
         created: u.getString('created'),
@@ -124,6 +130,8 @@ routerAdd(
         real_estate: u.getString('real_estate'),
         regions: u.getString('regions'),
         creci_status: u.getString('creci_status'),
+        creci_review: u.getBool('creci_review'),
+        creci_photo: u.getString('creci_photo'),
         blocked: u.getBool('blocked'),
         verified: u.getBool('verified'),
         created: u.getString('created'),
@@ -165,6 +173,13 @@ routerAdd(
         throw new BadRequestError('Status do CRECI inválido: ' + s)
       }
       record.set('creci_status', s)
+    }
+
+    // Conferência da carteirinha: o admin confirma a conferência limpando a
+    // flag (creci_review=false). A foto não é alterável por aqui — só removendo
+    // o usuário ou substituindo o arquivo no painel do PocketBase.
+    if ('creci_review' in body) {
+      record.set('creci_review', !!body.creci_review)
     }
 
     if ('email' in body) {

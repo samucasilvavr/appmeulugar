@@ -50,6 +50,7 @@ import {
   Ban,
   CheckCircle2,
   Trash2,
+  ScanSearch,
 } from 'lucide-react'
 
 const PROFILE_LABELS: Record<AdminManagedProfile, string> = {
@@ -144,6 +145,7 @@ export default function UsersAdminPanel() {
   // Block / delete dialogs
   const [blockTarget, setBlockTarget] = useState<AdminUserRecord | null>(null)
   const [blockBusy, setBlockBusy] = useState(false)
+  const [approvingId, setApprovingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AdminUserRecord | null>(null)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleteBusy, setDeleteBusy] = useState(false)
@@ -268,6 +270,33 @@ export default function UsersAdminPanel() {
       })
     } finally {
       setCreating(false)
+    }
+  }
+
+  // URL da foto da carteirinha CRECI (arquivo da coleção users no PocketBase).
+  const creciPhotoUrl = (u: AdminUserRecord) =>
+    u.creci_photo
+      ? `${import.meta.env.VITE_POCKETBASE_URL}/api/files/users/${u.id}/${u.creci_photo}`
+      : ''
+
+  // Confirma a conferência da carteirinha: limpa creci_review.
+  const handleApproveReview = async (u: AdminUserRecord) => {
+    setApprovingId(u.id)
+    try {
+      const updated = await adminUpdateUser(u.id, { creci_review: false })
+      setUsers((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      toast({
+        title: 'Conferência aprovada',
+        description: `A carteirinha de ${updated.name} foi conferida e o cadastro está regular.`,
+      })
+    } catch (err) {
+      toast({
+        title: 'Erro ao aprovar conferência',
+        description: getErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setApprovingId(null)
     }
   }
 
@@ -652,10 +681,35 @@ export default function UsersAdminPanel() {
                           CRECI {u.creci_status}
                         </Badge>
                       )}
+                      {u.profile === 'corretor' && u.creci_review && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] uppercase font-bold w-fit bg-orange-100 text-orange-800"
+                        >
+                          conferir carteirinha
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {u.profile === 'corretor' && u.creci_review && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApproveReview(u)}
+                          disabled={approvingId === u.id}
+                          title="Confirmar a conferência da carteirinha CRECI enviada"
+                          className="h-7 text-[11px] w-fit px-2 text-emerald-700 hover:text-emerald-800"
+                        >
+                          {approvingId === u.id ? (
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          )}
+                          Aprovar
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -724,6 +778,22 @@ export default function UsersAdminPanel() {
             </DialogDescription>
           </DialogHeader>
           {formFields(editForm, setEditForm, 'edit')}
+          {editing?.creci_photo && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Foto da carteirinha CRECI</Label>
+              <img
+                src={creciPhotoUrl(editing)}
+                alt={`Carteirinha CRECI de ${editing.name}`}
+                className="max-h-56 rounded-md border object-contain bg-muted/30"
+              />
+              {editing.creci_review && (
+                <p className="text-[11px] text-orange-700">
+                  Esta carteirinha está aguardando conferência — use o botão Aprovar na listagem
+                  para confirmá-la.
+                </p>
+              )}
+            </div>
+          )}
           <DialogFooter className="gap-2">
             <Button
               variant="outline"

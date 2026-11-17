@@ -144,7 +144,7 @@ export default function RegisterPage() {
       // Com a foto da carteirinha: acesso imediato ('aprovado') + marcado para
       // conferência posterior pelo admin. Sem a foto: Pendente de Aprovação.
       creci_status: profile === 'corretor' ? (temFoto ? 'aprovado' : 'pendente') : undefined,
-      creciPhoto: profile === 'corretor' ? creciPhoto : null,
+      creciPhoto: profile === 'corretor' ? (creciPhoto as unknown as File | null) : null,
     })
     setLoading(false)
 
