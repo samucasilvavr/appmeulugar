@@ -1,112 +1,81 @@
-/// <reference path="../pb_data/types.d.ts" />
-// delete_user.pb.js — Exclusão DEFINITIVA de usuário pelo admin (LGPD: direito de eliminação).
+// Exclusão definitiva de usuário pelo admin (LGPD: direito de eliminação).
 //
-// DELETE /backend/v1/appmeulugar/admin/users/{id}
+// ROTA: DELETE /backend/v1/appmeulugar/admin/users/{id}
+// (o gate requireAppAdmin e as demais rotas de gestão vivem em admin_users.pb.js —
+//  este arquivo contém apenas o handler de exclusão, para manter admin_users.pb.js
+//  dentro do limite de leitura e separar responsabilidades.)
 //
-// Trata registros vinculados antes de remover o users (a coleção users não tem
-// cascadeDelete nos relations de properties/interests/chats/presentations):
-//   apresentações (como broker ou owner) -> excluídas
-//   chats (como buyer ou broker) -> mensagens excluídas, chats excluídos
-//   favoritos, imóveis e demandas do usuário -> excluídos
-// Por fim o próprio registro do usuário é excluído (auth record do PocketBase).
+// Remove o usuário JUNTO com todos os registros vinculados a ele:
+//   favoritos, apresentações (como comprador ou corretor), mensagens enviadas,
+//   conversas (como comprador ou corretor), interesses e imóveis.
+// O admin nunca exclui o próprio usuário (proteção contra lockout).
 //
-// IMPORTANTE (runtime JSVM): toda a lógica fica inline no corpo do callback.
+// Runtime JSVM: lógica 100% inline no callback.
 routerAdd(
   'DELETE',
   '/backend/v1/appmeulugar/admin/users/{id}',
-  (c) => {
-    const info = $apis.requestInfo(c)
-    const admin = info.auth
-
-    if (!admin || admin.collection().name !== 'users' || admin.get('profile') !== 'admin') {
-      throw new ApiError(403, 'Acesso restrito a administradores.')
+  (e) => {
+    const id = e.request.pathValue('id')
+    let record
+    try {
+      record = e.app.findRecordById('users', id)
+    } catch (_) {
+      throw new NotFoundError('Usuário não encontrado.')
     }
 
-    const id = c.pathParam('id')
-    if (!id) throw new ApiError(400, 'ID do usuário é obrigatório.')
-
-    const target = $app.findRecordById('users', id)
-    if (!target) throw new ApiError(404, 'Usuário não encontrado.')
-
-    // Proteção contra lockout: admin não pode excluir a si mesmo nem outro admin.
-    if (target.id === admin.id) {
-      throw new ApiError(400, 'Você não pode excluir a sua própria conta de administrador.')
-    }
-    if (target.get('profile') === 'admin') {
-      throw new ApiError(400, 'Não é permitido excluir outro administrador pela interface.')
+    // Proteção: o admin nunca exclui o próprio usuário (evita lockout).
+    if (record.id === e.auth.id) {
+      throw new BadRequestError('Você não pode excluir o seu próprio usuário.')
     }
 
+    const app = e.app
     const removed = {
+      interests: 0,
+      properties: 0,
       presentations: 0,
       chats: 0,
-      messages: 0,
       favorites: 0,
-      properties: 0,
-      interests: 0,
-      user: 0,
+      messages: 0,
     }
 
-    // 1. Apresentações onde o usuário é broker ou owner do interesse.
-    const presBroker = $app.findRecordsByFilter(
-      'presentations',
-      'broker_id = {:uid} || interest_owner_id = {:uid}',
-      '',
-      0,
-      0,
-      { uid: id },
-    )
-    for (const p of presBroker) {
-      $app.delete(p)
-      removed.presentations++
+    function deleteAll(collection, filter, params, key) {
+      try {
+        const rows = app.findRecordsByFilter(collection, filter, '', 500, 0, params)
+        for (var i = 0; i < rows.length; i++) {
+          try {
+            app.delete(rows[i])
+            removed[key]++
+          } catch (_) {}
+        }
+      } catch (_) {}
     }
 
-    // 2. Chats onde o usuário é buyer ou broker — mensagens primeiro.
-    const chats = $app.findRecordsByFilter(
-      'chats',
-      'buyer_id = {:uid} || broker_id = {:uid}',
-      '',
-      0,
-      0,
-      { uid: id },
-    )
-    for (const chat of chats) {
-      const msgs = $app.findRecordsByFilter('messages', 'chat_id = {:cid}', '', 0, 0, {
-        cid: chat.id,
-      })
-      for (const m of msgs) {
-        $app.delete(m)
-        removed.messages++
-      }
-      $app.delete(chat)
-      removed.chats++
+    // Favoritos primeiro (referenciam interests/properties), depois vínculos diretos.
+    deleteAll('favorites', 'user_id = {:uid}', { uid: id }, 'favorites')
+    deleteAll('presentations', 'buyer_id = {:uid}', { uid: id }, 'presentations')
+    deleteAll('presentations', 'broker_id = {:uid}', { uid: id }, 'presentations')
+    deleteAll('messages', 'sender_id = {:uid}', { uid: id }, 'messages')
+    deleteAll('chats', 'buyer_id = {:uid}', { uid: id }, 'chats')
+    deleteAll('chats', 'broker_id = {:uid}', { uid: id }, 'chats')
+    deleteAll('interests', 'user_id = {:uid}', { uid: id }, 'interests')
+    deleteAll('properties', 'user_id = {:uid}', { uid: id }, 'properties')
+
+    try {
+      app.delete(record)
+    } catch (err) {
+      throw new BadRequestError(
+        'Não foi possível excluir o usuário: ' + String((err && err.message) || err || ''),
+      )
     }
-
-    // 3. Favoritos do usuário.
-    const favs = $app.findRecordsByFilter('favorites', 'user_id = {:uid}', '', 0, 0, { uid: id })
-    for (const f of favs) {
-      $app.delete(f)
-      removed.favorites++
-    }
-
-    // 4. Imóveis do usuário (apresentações que referenciam esses imóveis já foram removidas em 1).
-    const props = $app.findRecordsByFilter('properties', 'user_id = {:uid}', '', 0, 0, { uid: id })
-    for (const p of props) {
-      $app.delete(p)
-      removed.properties++
-    }
-
-    // 5. Demandas do usuário.
-    const ints = $app.findRecordsByFilter('interests', 'user_id = {:uid}', '', 0, 0, { uid: id })
-    for (const i of ints) {
-      $app.delete(i)
-      removed.interests++
-    }
-
-    // 6. O próprio usuário (auth record).
-    $app.delete(target)
-    removed.user++
-
-    return c.json(200, { ok: true, removed })
+    return e.json(200, { deleted: true, removed: removed })
   },
-  $apis.requireAuth(),
+  (e) => {
+    if (!e.auth) {
+      throw new UnauthorizedError('Faça login para acessar a gestão de usuários.')
+    }
+    if (!e.hasSuperuserAuth() && e.auth.getString('profile') !== 'admin') {
+      throw new ForbiddenError('Acesso restrito a administradores.')
+    }
+    return e.next()
+  },
 )

@@ -14,9 +14,10 @@
 //         inclusive 'admin') com nome, e-mail e senha
 //   PATCH /backend/v1/appmeulugar/admin/users/{id}/block  body {blocked:true|false}
 //         — bloqueia (impede login/uso) ou desbloqueia o usuário
-//   DELETE /backend/v1/appmeulugar/admin/users/{id}  — exclui o usuário definitivamente
-//         junto com interesses, imóveis, apresentações, chats/mensagens e favoritos dele
-//         (o admin não pode excluir o próprio usuário).
+//
+// A exclusão definitiva (DELETE /backend/v1/appmeulugar/admin/users/{id}, com
+// limpeza de interesses/imóveis/apresentações/chats/favoritos) vive em
+// delete_user.pb.js.
 //
 // Nota de runtime: o JSVM do PocketBase executa callbacks em pools de VM
 // separados — TODA a lógica precisa viver DENTRO de cada callback, sem
@@ -95,59 +96,7 @@ routerAdd(
   requireAppAdmin,
 )
 
-// ---- EXCLUIR (com limpeza dos registros vinculados) ----
-routerAdd(
-  'DELETE',
-  '/backend/v1/appmeulugar/admin/users/{id}',
-  (e) => {
-    const id = e.request.pathValue('id')
-    let record
-    try {
-      record = e.app.findRecordById('users', id)
-    } catch (_) {
-      throw new NotFoundError('Usuário não encontrado.')
-    }
-
-    // Proteção: o admin nunca exclui o próprio usuário (evita lockout).
-    if (record.id === e.auth.id) {
-      throw new BadRequestError('Você não pode excluir o seu próprio usuário.')
-    }
-
-    const app = e.app
-    const removed = { interests: 0, properties: 0, presentations: 0, chats: 0, favorites: 0 }
-
-    function deleteAll(collection, filter, params, key) {
-      try {
-        const rows = app.findRecordsByFilter(collection, filter, '', 500, 0, params)
-        for (var i = 0; i < rows.length; i++) {
-          try {
-            app.delete(rows[i])
-            removed[key]++
-          } catch (_) {}
-        }
-      } catch (_) {}
-    }
-
-    deleteAll('favorites', 'user_id = {:uid}', { uid: id }, 'favorites')
-    deleteAll('presentations', 'buyer_id = {:uid}', { uid: id }, 'presentations')
-    deleteAll('presentations', 'broker_id = {:uid}', { uid: id }, 'presentations')
-    deleteAll('messages', 'sender_id = {:uid}', { uid: id }, 'chats')
-    deleteAll('chats', 'buyer_id = {:uid}', { uid: id }, 'chats')
-    deleteAll('chats', 'broker_id = {:uid}', { uid: id }, 'chats')
-    deleteAll('interests', 'user_id = {:uid}', { uid: id }, 'interests')
-    deleteAll('properties', 'user_id = {:uid}', { uid: id }, 'properties')
-
-    try {
-      app.delete(record)
-    } catch (err) {
-      throw new BadRequestError(
-        'Não foi possível excluir o usuário: ' + String((err && err.message) || err || ''),
-      )
-    }
-    return e.json(200, { deleted: true, removed: removed })
-  },
-  requireAppAdmin,
-)
+// (A exclusão com limpeza de vínculos vive em delete_user.pb.js.)
 
 // ---- EDITAR usuário (PATCH com todos os campos) ----
 routerAdd(

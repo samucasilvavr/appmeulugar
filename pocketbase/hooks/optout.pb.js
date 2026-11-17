@@ -6,12 +6,11 @@
 // Aplica-se a DOIS destinos:
 //  1. imported_contacts — o contato deixa de receber os avisos "sem match"
 //     (authorization_status = 'descadastrado'; o hook de interesses filtra).
-//  2. users (corretores) — o próprio usuário pode marcar optOut de notificações
-//     gerais; o hook de interesses ignora corretor com optOut.
+//  2. users (corretores) — o próprio usuário pode marcar optout_notifications
+//     de notificações gerais; o hook de interesses ignora corretor com o campo ativo.
 //
-// Também consulta/aplica o template 'geral_lista_importada' (LGPD) quando o
-// e-mail não existe em nenhuma base: cria um registro apenas se o e-mail
-// realmente veio de uma lista (não criamos registro de quem nunca esteve aqui).
+// E-mail desconhecido: cria imported_contacts 'descadastrado' (bloqueia
+// reimportação) + notification_logs de auditoria.
 //
 // Runtime JSVM: lógica 100% inline no callback.
 routerAdd(
@@ -45,7 +44,7 @@ routerAdd(
       }
     } catch (_) {}
 
-    // Usuário cadastrado (corretor)?
+    // Usuário cadastrado?
     try {
       var user = e.app.findFirstRecordByFilter('users', 'email = {:email}', '', 1, 0, {
         email: email,
@@ -99,13 +98,13 @@ routerAdd(
       }
     } catch (_) {}
 
-    // 2. Usuário cadastrado → optOut = true (para de receber notificações gerais)
+    // 2. Usuário cadastrado → optout_notifications = true
     try {
       var user = e.app.findFirstRecordByFilter('users', 'email = {:email}', '', 1, 0, {
         email: email,
       })
       if (user) {
-        user.set('optOut', true)
+        user.set('optout_notifications', true)
         e.app.save(user)
         result.updated = true
         result.type = 'usuario'
@@ -116,8 +115,7 @@ routerAdd(
     // 3. E-mail desconhecido: registra o bloqueio em DOIS lugares para que
     //    futuros envios e futuras importações o respeitem:
     //      a) imported_contacts com authorization_status='descadastrado'
-    //         (fonte: 'Descadastro direto (nunca importado)') — assim o dedupe
-    //         por e-mail da importação nunca recria o registro;
+    //         — assim o dedupe por e-mail da importação nunca o recria;
     //      b) notification_logs com status='descadastrado' (trilha de auditoria).
     try {
       var contactsCol = e.app.findCollectionByNameOrId('imported_contacts')
