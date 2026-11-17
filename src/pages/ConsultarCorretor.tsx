@@ -12,38 +12,107 @@ import {
 import { BRAZILIAN_STATES } from '@/lib/locations'
 import { ExternalLink, ShieldCheck, Info, MapPin } from 'lucide-react'
 
-// URL oficial de consulta pública de corretores de cada CRECI regional.
-// Para regiões sem portal de consulta próprio, aponta para o portal nacional
-// (COFECI / conselho.net.br) ou para a página de consulta do CRECI-SP
-// (hospedeiro da consulta em nome de várias regiões).
+// URL oficial de consulta pública de corretores de cada CRECI regional —
+// endereços conferidos e fornecidos pelo usuário (um por UF, 27 estados).
 const UF_CONSULTA_URLS: Record<string, { url: string; fonte: string }> = {
-  AC: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
-  AL: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
-  AM: { url: 'https://creciam.conselho.net.br', fonte: 'CRECI 8ª Região (AM)' },
-  AP: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
-  BA: { url: 'https://creciba.conselho.net.br', fonte: 'CRECI 5ª Região (BA)' },
-  CE: { url: 'https://crecice.conselho.net.br', fonte: 'CRECI 7ª Região (CE)' },
-  DF: { url: 'https://crecidf.conselho.net.br', fonte: 'CRECI 17ª Região (DF)' },
-  ES: { url: 'https://crecies.conselho.net.br', fonte: 'CRECI 12ª Região (ES)' },
-  GO: { url: 'https://crecigo.conselho.net.br', fonte: 'CRECI 19ª Região (GO)' },
-  MA: { url: 'https://crecima.conselho.net.br', fonte: 'CRECI 9ª Região (MA)' },
-  MG: { url: 'https://www.crecimgead.com.br', fonte: 'CRECI-MG (6ª Região)' },
-  MS: { url: 'https://crecims.conselho.net.br', fonte: 'CRECI 20ª Região (MS)' },
-  MT: { url: 'https://crecimt.conselho.net.br', fonte: 'CRECI 22ª Região (MT)' },
-  PA: { url: 'https://crecipa.conselho.net.br', fonte: 'CRECI 16ª Região (PA)' },
-  PB: { url: 'https://crecipb.conselho.net.br', fonte: 'CRECI 13ª Região (PB)' },
-  PE: { url: 'https://crecipe.conselho.net.br', fonte: 'CRECI 10ª Região (PE)' },
-  PI: { url: 'https://crecipi.conselho.net.br', fonte: 'CRECI 18ª Região (PI)' },
-  PR: { url: 'https://www.crecipr.com.br', fonte: 'CRECI-PR (11ª Região)' },
-  RJ: { url: 'https://crecirj.conselho.net.br', fonte: 'CRECI 4ª Região (RJ)' },
-  RN: { url: 'https://crecirn.conselho.net.br', fonte: 'CRECI 14ª Região (RN)' },
-  RO: { url: 'https://creciro.conselho.net.br', fonte: 'CRECI 23ª Região (RO)' },
-  RR: { url: 'https://www.cofeci.gov.br', fonte: 'COFECI (portal nacional)' },
-  RS: { url: 'https://crecirs.com.br', fonte: 'CRECI-RS (3ª Região)' },
-  SC: { url: 'https://crecisc.conselho.net.br', fonte: 'CRECI 15ª Região (SC)' },
-  SE: { url: 'https://crecise.conselho.net.br', fonte: 'CRECI 21ª Região (SE)' },
-  SP: { url: 'https://www.crecisp.gov.br', fonte: 'CRECI-SP (2ª Região)' },
-  TO: { url: 'https://crecito.conselho.net.br', fonte: 'CRECI 24ª Região (TO)' },
+  // Links diretos (página exata de busca)
+  DF: { url: 'https://app.crecidf.gov.br/consultacorretor', fonte: 'CRECI-DF' },
+  MG: { url: 'https://crecimg.gov.br', fonte: 'CRECI-MG (consulta pelo menu do portal)' },
+  PB: {
+    url: 'https://creci-pb.gov.br/canal-do-cidadao/pesquisa-de-corretores-credenciados/',
+    fonte: 'CRECI-PB',
+  },
+  PR: { url: 'https://www.crecipr.gov.br/pesquisa-credenciados', fonte: 'CRECI-PR' },
+  SC: {
+    url: 'https://www.crecisc.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-SC',
+  },
+  SP: { url: 'https://www.crecisp.gov.br/cidadao/buscaporcorretores', fonte: 'CRECI-SP' },
+  // Demais estados (sistema padrão Conselho.Net, form_pesquisa_cadastro_geral_site.php)
+  AC: {
+    url: 'https://www.creciac.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-AC',
+  },
+  AL: {
+    url: 'https://creci-al.gov.br/novo/area-do-corretor',
+    fonte: 'CRECI-AL (área do corretor)',
+  },
+  AP: {
+    url: 'https://www.creciap.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-AP',
+  },
+  AM: {
+    url: 'https://www.creciam.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-AM',
+  },
+  BA: {
+    url: 'https://www.creciba.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-BA',
+  },
+  CE: {
+    url: 'https://www.crecice.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-CE',
+  },
+  ES: {
+    url: 'https://www.crecies.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-ES',
+  },
+  GO: {
+    url: 'https://www.crecigo.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-GO',
+  },
+  MA: {
+    url: 'https://www.crecima.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-MA',
+  },
+  MT: {
+    url: 'https://www.crecimt.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-MT',
+  },
+  MS: {
+    url: 'https://www.crecims.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-MS',
+  },
+  PA: {
+    url: 'https://www.crecipa.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-PA',
+  },
+  PE: {
+    url: 'https://www.crecipe.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-PE',
+  },
+  PI: {
+    url: 'https://www.crecipi.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-PI',
+  },
+  RJ: {
+    url: 'https://www.crecirj.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-RJ',
+  },
+  RN: {
+    url: 'https://www.crecirn.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-RN',
+  },
+  RS: {
+    url: 'https://www.crecirs.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-RS',
+  },
+  RO: {
+    url: 'https://www.creciro.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-RO',
+  },
+  RR: {
+    url: 'https://www.crecirr.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-RR',
+  },
+  SE: {
+    url: 'https://www.crecise.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-SE',
+  },
+  TO: {
+    url: 'https://www.crecito.conselho.net.br/form_pesquisa_cadastro_geral_site.php',
+    fonte: 'CRECI-TO',
+  },
 }
 
 export default function ConsultarCorretorPage() {
@@ -96,6 +165,11 @@ export default function ConsultarCorretorPage() {
                   {destino.fonte}
                 </p>
                 <p className="text-[11px] text-muted-foreground break-all">{destino.url}</p>
+                {uf === 'MG' && (
+                  <p className="text-[11px] text-muted-foreground">
+                    No CRECI-MG a consulta é feita pelo menu do portal (Procure um corretor).
+                  </p>
+                )}
               </div>
             )}
 
@@ -115,8 +189,8 @@ export default function ConsultarCorretorPage() {
               <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <span>
                 A consulta é feita no site oficial do conselho — o AppMeuLugar não armazena nem
-                intermedia esses dados. Nos estados sem portal de consulta próprio, o link abre o
-                portal nacional do COFECI.
+                intermedia esses dados. Em todos os estados o link abre a página de consulta do
+                CRECI respectivo.
               </span>
             </div>
           </CardContent>
