@@ -12,6 +12,11 @@
 // Envio pelo mailer nativo do PocketBase ($app.newMailClient). Toda tentativa
 // (envio ou falha) vira registro em notification_logs. Erros nunca interrompem
 // a publicação do interesse.
+//
+// Fonte ÚNICA e FIXA da base dos links (decisão definitiva de 18/11/2026): o
+// domínio próprio https://www.appmeulugar.com.br, lido inline dentro do callback
+// (regra JSVM). O secret SITE_URL antigo NÃO é mais lido. Override opcional APENAS
+// pelo secret SITE_URL_OVERRIDE. O padrão é SEMPRE o domínio próprio.
 
 var interestNotificationHandler = function (e) {
   e.next()
@@ -21,8 +26,12 @@ var interestNotificationHandler = function (e) {
     var NOTIF_FROM_ADDRESS = 'contato@appmeulugar.com.br'
     var NOTIF_FROM_NAME = 'AppMeuLugar'
 
+    // Fonte ÚNICA e FIXA da base dos links (JSVM: leitura inline, no callback).
     function siteUrl() {
-      return String($os.getenv('SITE_URL') || '').replace(/\/+$/, '')
+      return (
+        String($os.getenv('SITE_URL_OVERRIDE') || '').replace(/\/+$/, '') ||
+        'https://www.appmeulugar.com.br'
+      )
     }
 
     function escapeHtml(value) {

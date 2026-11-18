@@ -8,9 +8,11 @@
 // Exige auth de usuário com profile = 'admin'.
 // Runtime Skip Cloud (JSVM): toda a lógica vive DENTRO do callback.
 //
-// Links: a ÚNICA fonte é o secret SITE_URL (domínio próprio
-// https://www.appmeulugar.com.br). Se o secret estiver vazio, o envio falha
-// explicitamente em vez de cair num endereço antigo — nunca sai URL goskip.
+// Fonte ÚNICA e FIXA da base dos links (decisão definitiva de 18/11/2026): o
+// domínio próprio https://www.appmeulugar.com.br, inline no corpo do callback.
+// O secret SITE_URL antigo NÃO é mais lido. Override opcional APENAS pelo secret
+// SITE_URL_OVERRIDE (se existir e não for vazio, respeitando a regra JSVM de ler
+// globals dentro do callback). O padrão é SEMPRE o domínio próprio.
 // Cada template tem o SEU placeholder de link:
 //   - geral_lista_importada → [link-ver-demandas] (botão "Ver demandas")
 //   - match_corretor        → [link-visualizar-demanda] (botão "Visualizar demanda")
@@ -49,12 +51,10 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
     throw new NotFoundError('Template não encontrado: "' + slug + '" (registro vazio).')
   }
 
-  const siteUrl = String($os.getenv('SITE_URL') || '').replace(/\/+$/, '')
-  if (!siteUrl) {
-    throw new BadRequestError(
-      'SITE_URL não configurado — os e-mails não podem conter links. Configure o secret SITE_URL no painel.',
-    )
-  }
+  // Fonte ÚNICA e FIXA da base dos links (JSVM: leitura inline, no callback).
+  const siteUrl =
+    String($os.getenv('SITE_URL_OVERRIDE') || '').replace(/\/+$/, '') ||
+    'https://www.appmeulugar.com.br'
 
   function button(href, label) {
     return (
