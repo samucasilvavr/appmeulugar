@@ -189,7 +189,7 @@ var interestNotificationHandler = function (e) {
         '<div style="font-family:Arial,sans-serif;color:#1f2937;"><p>Olá, [nome].</p>' +
           '<p>Uma pessoa está procurando [descricao]. Você possui um imóvel compatível.</p>' +
           '<p>Acesse o AppMeuLugar para conhecer essa oportunidade.</p>' +
-          '[link-demanda]</div>',
+          '[link-visualizar-demanda]</div>',
       )
       var link = siteUrl() + '/painel-corretor?enviar_para=' + interestId
       var html = renderTemplate(tpl.body, {
@@ -202,11 +202,13 @@ var interestNotificationHandler = function (e) {
         quartos:
           interest.getInt('min_bedrooms') > 0 ? interest.getInt('min_bedrooms') : 'não informado',
         valor: money(interest.getFloat('max_price')),
-        'link-demanda': button(link, 'Visualizar demanda'),
+        'link-visualizar-demanda': button(link, 'Visualizar demanda'),
+        'link-ver-demandas': button(siteUrl() + '/buscar?tipo=interesses', 'Ver demandas'),
         'link-descadastrar': button(
           siteUrl() + '/descadastrar?email=' + encodeURIComponent(email),
           'Não quero receber estes e-mails',
         ),
+        'link-descadastrar-texto': siteUrl() + '/descadastrar?email=' + encodeURIComponent(email),
       })
       var subject = renderTemplate(tpl.subject, {
         nome: broker.getString('name') || 'corretor',
@@ -300,7 +302,7 @@ var interestNotificationHandler = function (e) {
           '<p>Como não temos seus dados cadastrais, este aviso foi enviado com base em ' +
           'uma lista pública de credenciados da Caixa Econômica Federal.</p>' +
           '<p>Veja as demandas publicadas na página pública do AppMeuLugar.</p>' +
-          '[link-demanda]' +
+          '[link-ver-demandas]' +
           '<p style="font-size:12px;color:#6b7280;">Para não receber mais estes e-mails, ' +
           'responda esta mensagem solicitando o descadastro ou use o link: [link-descadastrar-texto]</p>' +
           '</div>',
@@ -324,7 +326,8 @@ var interestNotificationHandler = function (e) {
           quartos:
             interest.getInt('min_bedrooms') > 0 ? interest.getInt('min_bedrooms') : 'não informado',
           valor: money(interest.getFloat('max_price')),
-          'link-demanda': button(link, 'Ver demandas'),
+          'link-visualizar-demanda': button(siteUrl() + '/painel-corretor', 'Visualizar demanda'),
+          'link-ver-demandas': button(link, 'Ver demandas'),
           'link-descadastrar': button(unsubscribeUrl, 'Não quero receber estes e-mails'),
           'link-descadastrar-texto': unsubscribeUrl,
         })

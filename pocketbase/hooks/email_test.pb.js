@@ -7,6 +7,15 @@
 // Rota: POST /backend/v1/appmeulugar/admin/email-test   body {slug, to}
 // Exige auth de usuário com profile = 'admin'.
 // Runtime Skip Cloud (JSVM): toda a lógica vive DENTRO do callback.
+//
+// Links: a ÚNICA fonte é o secret SITE_URL (domínio próprio
+// https://www.appmeulugar.com.br). Se o secret estiver vazio, o envio falha
+// explicitamente em vez de cair num endereço antigo — nunca sai URL goskip.
+// Cada template tem o SEU placeholder de link:
+//   - geral_lista_importada → [link-ver-demandas] (botão "Ver demandas")
+//   - match_corretor        → [link-visualizar-demanda] (botão "Visualizar demanda")
+//   - ambos                 → [link-descadastrar] (botão, parágrafo próprio) e
+//                             [link-descadastrar-texto] (texto puro).
 
 routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
   if (!e.auth) {
@@ -27,8 +36,6 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
   }
 
   // JSVM: findFirstRecordByFilter(collection, filter, params...) — sem sort/limit/offset.
-  // Antes eram passados '', 1, 0 extras, o que quebrava a busca e mascarava o erro
-  // como "Template não encontrado." mesmo com o registro existente no banco.
   let rec
   try {
     rec = e.app.findFirstRecordByFilter('email_templates', 'slug = {:slug}', {
@@ -43,6 +50,32 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
   }
 
   const siteUrl = String($os.getenv('SITE_URL') || '').replace(/\/+$/, '')
+  if (!siteUrl) {
+    throw new BadRequestError(
+      'SITE_URL não configurado — os e-mails não podem conter links. Configure o secret SITE_URL no painel.',
+    )
+  }
+
+  function button(href, label) {
+    return (
+      '<p><a href="' +
+      href +
+      '" style="display:inline-block;padding:10px 18px;background:#0f766e;color:#ffffff;' +
+      'text-decoration:none;border-radius:6px;">' +
+      label +
+      '</a></p>'
+    )
+  }
+
+  // Placeholder de link específico de cada template — o botão de "Visualizar
+  // demanda" (painel do corretor) pertence SOMENTE ao template de match.
+  let demandButton
+  if (slug === 'geral_lista_importada') {
+    demandButton = button(siteUrl + '/buscar?tipo=interesses', 'Ver demandas')
+  } else {
+    demandButton = button(siteUrl + '/painel-corretor', 'Visualizar demanda')
+  }
+
   const sample = {
     nome: 'Maria Exemplo',
     descricao: 'apartamento para comprar em São Paulo, com 2 quarto(s) ou mais, até R$ 450.000',
@@ -52,15 +85,14 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
     estado: 'SP',
     quartos: 2,
     valor: 'R$ 450.000',
-    'link-demanda':
-      '<p><a href="' +
-      siteUrl +
-      '/painel-corretor" style="display:inline-block;padding:10px 18px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:6px;">Visualizar demanda</a></p>',
-    'link-descadastrar':
-      '<p><a href="' +
-      siteUrl +
-      '/descadastrar?email=exemplo" style="display:inline-block;padding:10px 18px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:6px;">Não quero receber estes e-mails</a></p>',
-    'link-descadastrar-texto': siteUrl + '/descadastrar?email=exemplo',
+    'link-ver-demandas': demandButton,
+    'link-visualizar-demanda': demandButton,
+    'link-demanda': demandButton,
+    'link-descadastrar': button(
+      siteUrl + '/descadastrar?email=' + encodeURIComponent(to),
+      'Não quero receber estes e-mails',
+    ),
+    'link-descadastrar-texto': siteUrl + '/descadastrar?email=' + encodeURIComponent(to),
   }
 
   function render(text) {
