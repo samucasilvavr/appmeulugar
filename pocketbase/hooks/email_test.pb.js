@@ -26,13 +26,20 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
     throw new BadRequestError('Informe um endereço de e-mail válido.')
   }
 
+  // JSVM: findFirstRecordByFilter(collection, filter, params...) — sem sort/limit/offset.
+  // Antes eram passados '', 1, 0 extras, o que quebrava a busca e mascarava o erro
+  // como "Template não encontrado." mesmo com o registro existente no banco.
   let rec
   try {
-    rec = e.app.findFirstRecordByFilter('email_templates', 'slug = {:slug}', '', 1, 0, {
+    rec = e.app.findFirstRecordByFilter('email_templates', 'slug = {:slug}', {
       slug: slug,
     })
-  } catch (_) {
-    throw new NotFoundError('Template não encontrado.')
+  } catch (err) {
+    console.log('email-test: falha ao buscar template "' + slug + '": ' + String(err))
+    throw new NotFoundError('Template não encontrado: "' + slug + '".')
+  }
+  if (!rec || !rec.getString('subject')) {
+    throw new NotFoundError('Template não encontrado: "' + slug + '" (registro vazio).')
   }
 
   const siteUrl = String($os.getenv('SITE_URL') || '').replace(/\/+$/, '')
