@@ -835,9 +835,10 @@ export default function AdminDashboard() {
                     Templates de E-mail
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Edite o assunto e o corpo dos e-mails transacionais. Use as variáveis{' '}
-                    <code>[cidade]</code>, <code>[tipo]</code>, <code>[quartos]</code>,{' '}
-                    <code>[valor]</code> e <code>[link-demanda]</code>.
+                    Edite o assunto e o corpo dos e-mails transacionais. As variáveis de cada
+                    template estão listadas no campo &quot;variáveis&quot; do registro (ex.:{' '}
+                    <code>[cidade]</code>, <code>[tipo]</code>, <code>[nome-corretor]</code>,{' '}
+                    <code>[nome-interessado]</code>, <code>[link-demanda]</code>).
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={loadTemplates} className="h-8 text-xs">

@@ -16,6 +16,8 @@
 // Cada template tem o SEU placeholder de link:
 //   - geral_lista_importada → [link-ver-demandas] (botão "Ver demandas")
 //   - match_corretor        → [link-visualizar-demanda] (botão "Visualizar demanda")
+//   - nova_apresentacao     → [link-ver-apresentacao] (botão "Ver apresentação",
+//                             painel do interessado)
 //   - ambos                 → [link-descadastrar] (botão, parágrafo próprio) e
 //                             [link-descadastrar-texto] (texto puro).
 
@@ -72,6 +74,8 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
   let demandButton
   if (slug === 'geral_lista_importada') {
     demandButton = button(siteUrl + '/buscar?tipo=interesses', 'Ver demandas')
+  } else if (slug === 'nova_apresentacao') {
+    demandButton = button(siteUrl + '/painel-interessado', 'Ver apresentação')
   } else {
     demandButton = button(siteUrl + '/painel-corretor', 'Visualizar demanda')
   }
@@ -84,9 +88,14 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/email-test', (e) => {
     cidade: 'São Paulo',
     estado: 'SP',
     quartos: 2,
+    'nome-corretor': 'Carlos Corretor',
+    'nome-interessado': 'Maria Exemplo',
+    demanda: 'Casa na Asa Sul para comprar',
     valor: 'R$ 450.000',
     'link-ver-demandas': demandButton,
     'link-visualizar-demanda': demandButton,
+    'link-ver-apresentacao': demandButton,
+    'link-apresentacao-texto': siteUrl + '/painel-interessado',
     'link-demanda': demandButton,
     'link-descadastrar': button(
       siteUrl + '/descadastrar?email=' + encodeURIComponent(to),
