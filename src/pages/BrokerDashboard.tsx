@@ -145,11 +145,11 @@ export default function BrokerDashboard() {
 
     setSending(true)
     try {
+      // interest_owner_id (pode ser vazio — demanda anônima) e broker_id são
+      // resolvidos no servidor pelo hook presentation_create.pb.js.
       await createPresentation({
         interest_id: targetInterest.id,
-        interest_owner_id: targetInterest.user_id,
         property_id: selectedPropertyId,
-        broker_id: user.id,
         message: presentationMessage,
       })
 

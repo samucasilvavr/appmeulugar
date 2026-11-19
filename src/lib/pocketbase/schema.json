@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T13:49:01.988Z",
+  "generatedAt": "2026-11-19T16:51:20.455Z",
   "collections": [
     {
       "name": "users",
@@ -458,7 +458,7 @@
         {
           "name": "interest_owner_id",
           "type": "relation",
-          "required": true,
+          "required": false,
           "system": false,
           "collectionRef": "users"
         },

@@ -58,30 +58,18 @@ export async function getPresentationById(id: string): Promise<PresentationRecor
 
 export async function createPresentation(data: {
   interest_id: string
-  interest_owner_id: string
   property_id: string
-  broker_id: string
   message: string
 }): Promise<PresentationRecord> {
-  // Check active slots: max 5 pending presentations for this demand
-  const current = await getPresentationsByInterest(data.interest_id)
-  const pendingCount = current.filter((p) => p.status === 'pendente').length
-  if (pendingCount >= 5) {
-    throw new Error(
-      'Esta demanda já atingiu o limite máximo de 5 apresentações pendentes simultâneas.',
-    )
-  }
-
-  // Check if broker already presented this property for this demand
-  const alreadyPresented = current.some(
-    (p) => p.property_id === data.property_id && p.broker_id === data.broker_id,
-  )
-  if (alreadyPresented) {
-    throw new Error('Você já enviou este imóvel para esta demanda.')
-  }
-
+  // interest_owner_id e broker_id são resolvidos no SERVIDOR (hook
+  // presentation_create.pb.js): a demanda pode ser anônima (sem user_id),
+  // e o corretor é sempre o usuário autenticado. As regras de negócio
+  // (máx. 5 pendentes por demanda, imóvel do próprio portfólio, sem imóvel
+  // duplicado) também são reforçadas no hook, de forma atômica.
   const pres = await pb.collection('presentations').create<PresentationRecord>({
-    ...data,
+    interest_id: data.interest_id,
+    property_id: data.property_id,
+    message: data.message,
     status: 'pendente',
   })
 
