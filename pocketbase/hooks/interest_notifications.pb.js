@@ -126,9 +126,11 @@ var interestNotificationHandler = function (e) {
     }
 
     // Lê o template editável do admin (email_templates). Nunca lança.
+    // JSVM: findFirstRecordByFilter(collection, filter, params) — SEM sort/limit/offset
+    // (extras quebram o bind e o catch engoliria como "fallback").
     function loadTemplate(slug, fallbackSubject, fallbackBody) {
       try {
-        var rec = app.findFirstRecordByFilter('email_templates', 'slug = {:slug}', '', 1, 0, {
+        var rec = app.findFirstRecordByFilter('email_templates', 'slug = {:slug}', {
           slug: slug,
         })
         if (rec) {
@@ -152,9 +154,10 @@ var interestNotificationHandler = function (e) {
     }
 
     function isOptedOut(email) {
+      // JSVM: findFirstRecordByFilter(collection, filter, params) — SEM sort/limit/offset.
       // 1. Corretor cadastrado marcou descadastro de notificações.
       try {
-        var u = app.findFirstRecordByFilter('users', 'email = {:email}', '', 1, 0, {
+        var u = app.findFirstRecordByFilter('users', 'email = {:email}', {
           email: email,
         })
         if (u && u.getBool('optout_notifications')) return true
@@ -164,9 +167,6 @@ var interestNotificationHandler = function (e) {
         var c = app.findFirstRecordByFilter(
           'imported_contacts',
           "email = {:email} && authorization_status = 'descadastrado'",
-          '',
-          1,
-          0,
           { email: email },
         )
         if (c) return true

@@ -28,14 +28,9 @@ routerAdd(
 
     // Contato importado?
     try {
-      var contact = e.app.findFirstRecordByFilter(
-        'imported_contacts',
-        'email = {:email}',
-        '',
-        1,
-        0,
-        { email: email },
-      )
+      var contact = e.app.findFirstRecordByFilter('imported_contacts', 'email = {:email}', {
+        email: email,
+      })
       if (contact) {
         result.found = true
         result.type = 'contato_importado'
@@ -46,7 +41,7 @@ routerAdd(
 
     // Usuário cadastrado?
     try {
-      var user = e.app.findFirstRecordByFilter('users', 'email = {:email}', '', 1, 0, {
+      var user = e.app.findFirstRecordByFilter('users', 'email = {:email}', {
         email: email,
       })
       if (user) {
@@ -79,14 +74,9 @@ routerAdd(
 
     // 1. Contato importado → authorization_status = 'descadastrado'
     try {
-      var contact = e.app.findFirstRecordByFilter(
-        'imported_contacts',
-        'email = {:email}',
-        '',
-        1,
-        0,
-        { email: email },
-      )
+      var contact = e.app.findFirstRecordByFilter('imported_contacts', 'email = {:email}', {
+        email: email,
+      })
       if (contact) {
         if (contact.getString('authorization_status') !== 'descadastrado') {
           contact.set('authorization_status', 'descadastrado')
@@ -100,7 +90,7 @@ routerAdd(
 
     // 2. Usuário cadastrado → optout_notifications = true
     try {
-      var user = e.app.findFirstRecordByFilter('users', 'email = {:email}', '', 1, 0, {
+      var user = e.app.findFirstRecordByFilter('users', 'email = {:email}', {
         email: email,
       })
       if (user) {

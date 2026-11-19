@@ -517,7 +517,8 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/import-contacts', (e) => {
     // nunca criamos segunda via para o mesmo e-mail.
     var existing = null
     try {
-      existing = e.app.findFirstRecordByFilter('imported_contacts', 'email = {:email}', '', 1, 0, {
+      // JSVM: findFirstRecordByFilter(collection, filter, params) — sem sort/limit/offset.
+      existing = e.app.findFirstRecordByFilter('imported_contacts', 'email = {:email}', {
         email: email,
       })
     } catch (_) {
