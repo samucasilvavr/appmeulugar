@@ -181,10 +181,10 @@ export async function updateEmailTemplate(
   }
 }
 
-// ---------- Importação de contatos por ARQUIVO (CSV / HTML da Caixa / XLSX) ----------
+// ---------- Importação de contatos por ARQUIVO (CSV / HTML / XLSX) ----------
 // Usa a rota customizada /backend/v1/appmeulugar/admin/import-contacts
-// (pb_hooks/import_contacts.pb.js): dedupe por e-mail, origem "Caixa Econômica
-// Federal — credenciados". Retorna quantos entraram e quantos duplicados.
+// (pb_hooks/import_contacts.pb.js): dedupe por e-mail, origem visível
+// "Lista pública de corretores". Retorna quantos entraram e quantos duplicados.
 
 export interface ImportContactsResult {
   imported: number

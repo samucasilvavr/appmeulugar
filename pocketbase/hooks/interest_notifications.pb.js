@@ -309,7 +309,7 @@ var interestNotificationHandler = function (e) {
         '<div style="font-family:Arial,sans-serif;color:#1f2937;"><p>Olá, [nome].</p>' +
           '<p>Houve um novo interesse de imóvel publicado em [estado]: [descricao].</p>' +
           '<p>Como não temos seus dados cadastrais, este aviso foi enviado com base em ' +
-          'uma lista pública de credenciados da Caixa Econômica Federal.</p>' +
+          'uma lista pública de corretores.</p>' +
           '<p>Veja as demandas publicadas na página pública do AppMeuLugar.</p>' +
           '[link-ver-demandas]' +
           '<p style="font-size:12px;color:#6b7280;">Para não receber mais estes e-mails, ' +

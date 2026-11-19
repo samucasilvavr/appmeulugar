@@ -53,9 +53,8 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                   <strong>Contatos de listas públicas:</strong> a plataforma importa, de listas
-                  públicas de corretores credenciados (por exemplo, a relação de credenciados da
-                  Caixa Econômica Federal), nome, e-mail, telefone, CRECI e UF. Esses dados são
-                  usados apenas para avisar sobre interesses compatíveis — veja a seção 4.
+                  públicas de corretores, nome, e-mail, telefone, CRECI e UF. Esses dados são usados
+                  apenas para avisar sobre interesses compatíveis — veja a seção 4.
                 </li>
               </ul>
             </Section>

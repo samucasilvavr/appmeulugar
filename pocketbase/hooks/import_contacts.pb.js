@@ -1,7 +1,7 @@
 // Importação de contatos via ARQUIVO (CSV / HTML / XLSX) — rota de ADMIN.
 //
 // Por que rota customizada: os contatos da lista importada são os DESTINATÁRIOS
-// dos e-mails do AppMeuLugar (origem: lista pública da Caixa Econômica Federal),
+// dos e-mails do AppMeuLugar (origem técnica: lista pública de corretores),
 // com dados de terceiros que NÃO são usuários do app. A importação valida cada
 // e-mail, rejeita os inválidos e NUNCA duplica (mesmo e-mail em outra linha do
 // arquivo ou já existente no banco é ignorado, nunca criado em segunda via).
@@ -23,7 +23,7 @@
 //   creci: creci / numero do creci
 //   phone: telefone / telefone 1 / telefone1 / celular / fone
 //   city: cidade / municipio
-//   source: sempre "Caixa Econômica Federal — credenciados (importado em <data>)"
+//   source: sempre "Lista pública de corretores (importado em <data>)"
 //
 // Runtime JSVM: TODA a lógica vive dentro do callback (sem require, sem
 // referências a declarações de topo — veja memória do projeto).
@@ -485,7 +485,11 @@ routerAdd('POST', '/backend/v1/appmeulugar/admin/import-contacts', (e) => {
 
   // ---------- 3. Valida, deduplica e salva ----------
   var contactsCol = e.app.findCollectionByNameOrId('imported_contacts')
-  var sourceTag = 'Caixa Econômica Federal — credenciados (importado em '
+  // Texto VISÍVEL da origem: termina em "corretores" (pedido do usuário em
+  // 19/11/2026 — sem o trecho "credenciados da Caixa Econômica Federal").
+  // O arquivo de origem continua sendo a lista da Caixa; a origem interna
+  // (SOURCE_HEADERS no parse do HTML) continua registrando isso.
+  var sourceTag = 'Lista pública de corretores (importado em '
   var created = 0
   var skippedInvalid = 0
   var skippedDuplicate = 0

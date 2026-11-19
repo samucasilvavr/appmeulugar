@@ -639,10 +639,9 @@ export default function AdminDashboard() {
                   Importar por ARQUIVO (recomendado)
                 </h4>
                 <p className="text-[11px] text-muted-foreground">
-                  Envie um arquivo <strong>CSV</strong>, o{' '}
-                  <strong>HTML da lista de credenciados da Caixa Econômica Federal</strong> ou um{' '}
+                  Envie um arquivo <strong>CSV</strong>, <strong>HTML</strong> ou um{' '}
                   <strong>XLSX</strong>. Duplicados (mesmo e-mail) são ignorados automaticamente e
-                  marcados com a origem "Caixa Econômica Federal — credenciados" quando aplicável.
+                  marcados com a origem "Lista pública de corretores" quando aplicável.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
